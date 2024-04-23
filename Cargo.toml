@@ -1,8 +1,19 @@
 [package]
-name = "reito"
+name = "raito"
 version = "0.1.0"
 edition = "2021"
+description = "Raito is a Rendering Engine written in Rust"
+authors = ["Alice Sonolet <alice.sonolet@gmail.com>"]
+repository = "https://github.com/Alxiice/Raito"
+publish = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+egui = "0.27.0"
+eframe = { version = "0.27.0", default-features = false, features = [
+    "default_fonts", # Embed the default egui fonts.
+    "glow",          # Use the glow rendering backend. Alternative: "wgpu".
+] }
+log = "0.4"
+env_logger = "0.11.3"
