@@ -1,15 +1,13 @@
 pub struct RaitoRenderApp {
-    // Example stuff:
-    label: String,
-    value: f32,
+    // Declare here attributes 
+    scene_descriptor_path: String,
 }
 
 impl Default for RaitoRenderApp {
     fn default() -> Self {
         Self {
-            // Example stuff:
-            label: "Hello World!".to_owned(),
-            value: 2.7,
+            // Set here default values for declared attributes
+            scene_descriptor_path: "".to_owned()
         }
     }
 }

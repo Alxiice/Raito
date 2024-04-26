@@ -1,4 +1,4 @@
 #![warn(clippy::all, rust_2018_idioms)]
 
-mod app;
-pub use app::RaitoRenderApp;
+mod raito_render;
+pub use raito_render::RenderGlobals;
