@@ -1,13 +1,23 @@
+use egui::*;
+
 pub struct RaitoRenderApp {
     // Declare here attributes 
     scene_descriptor_path: String,
+
+    // Basic render color
+    color: Color32,
+    light_intensity: f32,
+
 }
 
 impl Default for RaitoRenderApp {
     fn default() -> Self {
         Self {
             // Set here default values for declared attributes
-            scene_descriptor_path: "".to_owned()
+            scene_descriptor_path: "".to_owned(),
+            // color: Color32::from_rgb(50, 100, 150).linear_multiply(0.25),
+            color: Color32::from_rgb(50, 100, 150),
+            light_intensity: 1.0
         }
     }
 }
@@ -20,6 +30,13 @@ impl RaitoRenderApp {
 
         Default::default()
     }
+
+    pub fn renderview_update(&mut self, ui: &mut Ui) -> egui::Response {
+        let (response, painter) =
+            ui.allocate_painter(Vec2::new(ui.available_width(), 300.0), Sense::hover());
+
+        response
+    }
 }
 
 impl eframe::App for RaitoRenderApp {
@@ -29,20 +46,13 @@ impl eframe::App for RaitoRenderApp {
         // For inspiration and more examples, go to https://emilk.github.io/egui
 
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-            // The top panel is often a good place for a menu bar:
-
             egui::menu::bar(ui, |ui| {
-                // NOTE: no File->Quit on web pages!
-                let is_web = cfg!(target_arch = "wasm32");
-                if !is_web {
-                    ui.menu_button("File", |ui| {
-                        if ui.button("Quit").clicked() {
-                            ctx.send_viewport_cmd(egui::ViewportCommand::Close);
-                        }
-                    });
-                    ui.add_space(16.0);
-                }
-
+                ui.menu_button("File", |ui| {
+                    if ui.button("Quit").clicked() {
+                        ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+                    }
+                });
+                ui.add_space(16.0);
                 egui::widgets::global_dark_light_mode_buttons(ui);
             });
         });
@@ -51,41 +61,28 @@ impl eframe::App for RaitoRenderApp {
             // The central panel the region left after adding TopPanel's and SidePanel's
             ui.heading("Raito Render");
 
-            ui.horizontal(|ui| {
-                ui.label("Write something: ");
-                ui.text_edit_singleline(&mut self.label);
+            // Render view
+            Frame::canvas(ui.style()).show(ui, |ui| {
+                self.renderview_update(ui);
             });
 
-            ui.add(egui::Slider::new(&mut self.value, 0.0..=10.0).text("value"));
-            if ui.button("Increment").clicked() {
-                self.value += 1.0;
-            }
-
-            ui.separator();
-
-            // ui.add(egui::github_link_file!(
-            //     "https://github.com/emilk/eframe_template/blob/main/",
-            //     "Source code."
-            // ));
-
-            // ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
-            //     powered_by_egui_and_eframe(ui);
-            //     egui::warn_if_debug_build(ui);
-            // });
+            // Parameters
+            ui.collapsing("Parameters", |ui| {
+                Grid::new("render_params")
+                    .num_columns(2)
+                    .spacing([12.0, 8.0])
+                    .striped(true)
+                    .show(ui, |ui| {
+                        ui.label("Color");
+                        ui.color_edit_button_srgba(&mut self.color);
+                        ui.end_row();
+                        
+                        ui.label("Light intensity");
+                        // ui.text_edit_singleline(&mut self.light_intensity);
+                        ui.add(egui::Slider::new(&mut self.light_intensity, 0.0..=10.0));
+                        ui.end_row();
+                    });
+            });
         });
     }
-}
-
-fn powered_by_egui_and_eframe(ui: &mut egui::Ui) {
-    ui.horizontal(|ui| {
-        ui.spacing_mut().item_spacing.x = 0.0;
-        ui.label("Powered by ");
-        ui.hyperlink_to("egui", "https://github.com/emilk/egui");
-        ui.label(" and ");
-        ui.hyperlink_to(
-            "eframe",
-            "https://github.com/emilk/egui/tree/master/crates/eframe",
-        );
-        ui.label(".");
-    });
 }

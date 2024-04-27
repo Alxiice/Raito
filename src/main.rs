@@ -9,8 +9,9 @@ fn main() -> eframe::Result<()> {
 
     let native_options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
-            .with_inner_size([400.0, 300.0])
-            .with_min_inner_size([300.0, 220.0])
+            .with_inner_size([400.0, 450.0])
+            .with_min_inner_size([350.0, 390.0])
+            .with_resizable(false)
             .with_icon(
                 // NOTE: Adding an icon is optional
                 eframe::icon_data::from_png_bytes(&include_bytes!("../assets/icon-256.png")[..])
@@ -23,4 +24,18 @@ fn main() -> eframe::Result<()> {
         native_options,
         Box::new(|cc| Box::new(RaitoRenderApp::new(cc))),
     )
+
+    // fn name(&self) -> &'static str {
+    //     "） Window Name"
+    // }
+    
+    // fn show(&mut self, ctx: &Context, open: &mut bool) {
+    //     use super::View as _;
+    //     Window::new(self.name())
+    //         .open(open)
+    //         .vscroll(false)
+    //         .resizable(false)
+    //         .default_size([300.0, 350.0])
+    //         .show(ctx, |ui| self.ui(ui));
+    // }
 }
