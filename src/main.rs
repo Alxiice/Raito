@@ -9,8 +9,9 @@ fn main() -> eframe::Result<()> {
 
     let native_options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
-            .with_inner_size([400.0, 450.0])
-            .with_min_inner_size([350.0, 390.0])
+            .with_inner_size([420.0, 500.0])
+            .with_min_inner_size([420.0, 500.0])
+            .with_max_inner_size([420.0, 600.0])
             .with_resizable(false)
             .with_icon(
                 // NOTE: Adding an icon is optional

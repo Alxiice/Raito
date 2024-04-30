@@ -1,8 +1,8 @@
 use egui::*;
+use raito::RenderGlobals;
 
 pub struct RaitoRenderApp {
     // Declare here attributes 
-    scene_descriptor_path: String,
 
     // Basic render color
     color: Color32,
@@ -14,7 +14,7 @@ impl Default for RaitoRenderApp {
     fn default() -> Self {
         Self {
             // Set here default values for declared attributes
-            scene_descriptor_path: "".to_owned(),
+
             // color: Color32::from_rgb(50, 100, 150).linear_multiply(0.25),
             color: Color32::from_rgb(50, 100, 150),
             light_intensity: 1.0
@@ -31,10 +31,30 @@ impl RaitoRenderApp {
         Default::default()
     }
 
-    pub fn renderview_update(&mut self, ui: &mut Ui) -> egui::Response {
-        let (response, painter) =
-            ui.allocate_painter(Vec2::new(ui.available_width(), 300.0), Sense::hover());
+    pub fn get_render_globals(&mut self) -> RenderGlobals {
+        let mut render_globals = RenderGlobals::default();
+        render_globals.color = vec![self.color.r(), self.color.g(), self.color.b()];
+        render_globals.light_intensity = self.light_intensity;
 
+        render_globals
+    }
+
+    pub fn renderview_update(&mut self, ui: &mut Ui) -> egui::Response {
+        // Create window
+        let (rect, response) =
+            ui.allocate_exact_size(egui::Vec2::splat(400.0), egui::Sense::drag());
+        
+        // Launch render
+        let mut render = self.get_render_globals();
+        let result = render.render();
+
+        print!["Color : {} {} {} \n", 
+            result.color[10][10][0],
+            result.color[10][10][1],
+            result.color[10][10][2]];
+        // TODO : replace print by actually displaying pixel
+
+        // Return response
         response
     }
 }
