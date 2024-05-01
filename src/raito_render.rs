@@ -1,74 +1,86 @@
 use std::borrow::Borrow;
 
-use env_logger::fmt::style::Color;
+use crate::RtRGB;
 
-pub struct RenderGlobals {
+/// =====================================================
+///                    Raito Render
+/// 
+/// Module authors : 
+/// - Alice Sonolet <alice.sonolet@gmail.com>
+/// 
+/// Module description :
+///   Defines render scene and methods to launch render.
+/// =====================================================
+
+
+pub struct RenderScene {
     // Declare here attributes 
     // _scene_descriptor_path: String,
 
     // View size
-    length_h: u16,
-    length_v: u16,
+    width: u16,
+    height: u16,
 
     // Tmp parameters (implementation step one)
-    pub color: Vec<u8>,
+    pub color: RtRGB,
     pub light_intensity: f32,
 }
 
-impl Default for RenderGlobals {
+impl Default for RenderScene {
     fn default() -> Self {
         Self {
             // _scene_descriptor_path: "".to_string(),
-            length_h: 400,
-            length_v: 400,
-            color: vec![0, 0, 0],
+            width: 400,
+            height: 400,
+            color: RtRGB::default(),
             light_intensity: 0.0
         }
     }
 }
 
 pub struct RenderResult {
-    pub color: Vec<Vec<Vec<u8>>>  // array of array of color
+    /// Array of array of color
+    /// To access : render_grid[col][row] -> index from top left to bottom right
+    pub render_grid: Vec<Vec<RtRGB>>,
 }
 
 impl RenderResult {
     fn new() -> Self {
         Self {
-            color: Vec::new()
+            render_grid: Vec::new()
         }
     }
 
-    fn init(&mut self, globals: &mut RenderGlobals) {
-        // let mut result = Self {
-        //     color: Vec::new()
-        // };
-        for y in 0..globals.length_h {
-            self.color.push(Vec::new());
-            for _ in 0..globals.length_v {
-                self.color[usize::from(y)].push(vec![0, 0, 0])
+    fn init(&mut self, globals: &mut RenderScene) {
+        // Realloc with known size
+        self.render_grid = Vec::with_capacity(usize::from(globals.width));
+        // For each column add row
+        for y in 0..globals.width {
+            // Add a row with known size
+            self.render_grid.push(Vec::with_capacity(usize::from(globals.height)));
+            // For each cell add color
+            for _ in 0..globals.height {
+                self.render_grid[usize::from(y)].push(RtRGB::default())
             }
         }
     }
 
-    fn set_pixel_color(&mut self, y: usize, x: usize, color: &Vec<u8>) {
-        self.color[usize::from(y)][usize::from(x)][0] = color[0];
-        self.color[usize::from(y)][usize::from(x)][1] = color[1];
-        self.color[usize::from(y)][usize::from(x)][2] = color[2];
+    fn set_pixel_color(&mut self, y: usize, x: usize, color: RtRGB) {
+        self.render_grid[usize::from(y)][usize::from(x)] = color;
     }
 }
 
-impl RenderGlobals {
+impl RenderScene {
     pub fn render(&mut self) -> RenderResult {
         let mut result = RenderResult::new();
         result.init(self);
 
         // Fill to color
-        for y in 0..self.length_h {
-            for x in 0..self.length_v {
-                result.set_pixel_color(usize::from(y), usize::from(x), &self.color);
+        for y in 0..self.width {
+            for x in 0..self.height {
+                result.set_pixel_color(usize::from(y), usize::from(x), self.color);
             }
         }
-
         return result
     }
 }

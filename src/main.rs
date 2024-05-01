@@ -1,5 +1,15 @@
 #![warn(clippy::all, rust_2018_idioms)]
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
+/// =====================================================
+///                    Raito Render
+/// 
+/// Module authors : 
+/// - Alice Sonolet <alice.sonolet@gmail.com>
+/// 
+/// Module description :
+///   Defines executable that will launch a render
+///   window. 
+/// =====================================================
 
 mod render_window;
 pub use render_window::RaitoRenderApp;

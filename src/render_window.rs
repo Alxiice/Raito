@@ -1,5 +1,16 @@
+/// =====================================================
+///                    Raito Render
+/// 
+/// Module authors : 
+/// - Alice Sonolet <alice.sonolet@gmail.com>
+/// 
+/// Module description :
+///   Opens a render window to load a scene and launch a 
+///   render.
+/// =====================================================
+
 use egui::*;
-use raito::RenderGlobals;
+use raito::{RenderScene, RtRGB};
 
 pub struct RaitoRenderApp {
     // Declare here attributes 
@@ -31,9 +42,9 @@ impl RaitoRenderApp {
         Default::default()
     }
 
-    pub fn get_render_globals(&mut self) -> RenderGlobals {
-        let mut render_globals = RenderGlobals::default();
-        render_globals.color = vec![self.color.r(), self.color.g(), self.color.b()];
+    pub fn get_render_globals(&mut self) -> RenderScene {
+        let mut render_globals = RenderScene::default();
+        render_globals.color = RtRGB::new(self.color.r(), self.color.g(), self.color.b());
         render_globals.light_intensity = self.light_intensity;
 
         render_globals
@@ -49,9 +60,9 @@ impl RaitoRenderApp {
         let result = render.render();
 
         print!["Color : {} {} {} \n", 
-            result.color[10][10][0],
-            result.color[10][10][1],
-            result.color[10][10][2]];
+            result.render_grid[10][10].r(),
+            result.render_grid[10][10].g(),
+            result.render_grid[10][10].b()];
         // TODO : replace print by actually displaying pixel
 
         // Return response
