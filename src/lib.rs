@@ -10,6 +10,6 @@
 /// =====================================================
 
 mod raito_render;
-pub use raito_render::RenderScene;
+pub use raito_render::*;
 mod rt_types;
 pub use rt_types::*;

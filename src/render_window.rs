@@ -10,7 +10,7 @@
 /// =====================================================
 
 use egui::*;
-use raito::{RenderScene, RtRGB};
+use raito::*;
 
 pub struct RaitoRenderApp {
     // Declare here attributes 
@@ -18,7 +18,7 @@ pub struct RaitoRenderApp {
     // Basic render color
     color: Color32,
     light_intensity: f32,
-
+    scene: RenderScene
 }
 
 impl Default for RaitoRenderApp {
@@ -28,7 +28,8 @@ impl Default for RaitoRenderApp {
 
             // color: Color32::from_rgb(50, 100, 150).linear_multiply(0.25),
             color: Color32::from_rgb(50, 100, 150),
-            light_intensity: 1.0
+            light_intensity: 1.0,
+            scene: RenderScene::default()
         }
     }
 }
@@ -42,12 +43,22 @@ impl RaitoRenderApp {
         Default::default()
     }
 
-    pub fn get_render_globals(&mut self) -> RenderScene {
-        let mut render_globals = RenderScene::default();
-        render_globals.color = RtRGB::new(self.color.r(), self.color.g(), self.color.b());
-        render_globals.light_intensity = self.light_intensity;
+    pub fn start_render(&mut self) {
+        // Setup scene
+        let color = RtRGB::new(self.color.r(), self.color.g(), self.color.b());
+        self.scene.setup_scene(color, self.light_intensity);
+        // Launch render
+        self.scene.render();
 
-        render_globals
+        // Debug
+        print!["Color : {} {} {} \n", 
+            self.scene.result.render_grid[10][10].r(),
+            self.scene.result.render_grid[10][10].g(),
+            self.scene.result.render_grid[10][10].b()];
+    }
+
+    pub fn stop_render(&mut self) {
+        // TODO
     }
 
     pub fn renderview_update(&mut self, ui: &mut Ui) -> egui::Response {
@@ -55,15 +66,7 @@ impl RaitoRenderApp {
         let (rect, response) =
             ui.allocate_exact_size(egui::Vec2::splat(400.0), egui::Sense::drag());
         
-        // Launch render
-        let mut render = self.get_render_globals();
-        let result = render.render();
-
-        print!["Color : {} {} {} \n", 
-            result.render_grid[10][10].r(),
-            result.render_grid[10][10].g(),
-            result.render_grid[10][10].b()];
-        // TODO : replace print by actually displaying pixel
+        // TODO : Display pixels from self.scene.result
 
         // Return response
         response
@@ -95,6 +98,16 @@ impl eframe::App for RaitoRenderApp {
             // Render view
             Frame::canvas(ui.style()).show(ui, |ui| {
                 self.renderview_update(ui);
+            });
+
+            // ui.button("Start rendering")
+            ui.horizontal(|ui| {
+                if ui.button("Start render").clicked() {
+                    self.start_render();
+                };
+                if ui.button("Stop render").clicked() {
+                    self.stop_render();
+                };
             });
 
             // Parameters

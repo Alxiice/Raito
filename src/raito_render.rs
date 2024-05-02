@@ -1,7 +1,3 @@
-use std::borrow::Borrow;
-
-use crate::RtRGB;
-
 /// =====================================================
 ///                    Raito Render
 /// 
@@ -12,57 +8,34 @@ use crate::RtRGB;
 ///   Defines render scene and methods to launch render.
 /// =====================================================
 
-
-pub struct RenderScene {
-    // Declare here attributes 
-    // _scene_descriptor_path: String,
-
-    // View size
-    width: u16,
-    height: u16,
-
-    // Tmp parameters (implementation step one)
-    pub color: RtRGB,
-    pub light_intensity: f32,
-}
-
-impl Default for RenderScene {
-    fn default() -> Self {
-        Self {
-            // _scene_descriptor_path: "".to_string(),
-            width: 400,
-            height: 400,
-            color: RtRGB::default(),
-            light_intensity: 0.0
-        }
-    }
-}
+use crate::RtRGB;
 
 pub struct RenderResult {
+    width: u16,
+    height: u16,
     /// Array of array of color
     /// To access : render_grid[col][row] -> index from top left to bottom right
     pub render_grid: Vec<Vec<RtRGB>>,
 }
 
 impl RenderResult {
-    fn new() -> Self {
-        Self {
-            render_grid: Vec::new()
-        }
-    }
-
-    fn init(&mut self, globals: &mut RenderScene) {
-        // Realloc with known size
-        self.render_grid = Vec::with_capacity(usize::from(globals.width));
-        // For each column add row
-        for y in 0..globals.width {
+    pub fn new() -> Self {
+        let width = 400;
+        let height = 400;
+        let mut render = Self {
+            width: width,
+            height: height,
+            render_grid: Vec::with_capacity(usize::from(width))
+        };
+        for y in 0..width {
             // Add a row with known size
-            self.render_grid.push(Vec::with_capacity(usize::from(globals.height)));
+            render.render_grid.push(Vec::with_capacity(usize::from(render.height)));
             // For each cell add color
-            for _ in 0..globals.height {
-                self.render_grid[usize::from(y)].push(RtRGB::default())
+            for _ in 0..render.height {
+                render.render_grid[usize::from(y)].push(RtRGB::default())
             }
         }
+        render
     }
 
     fn set_pixel_color(&mut self, y: usize, x: usize, color: RtRGB) {
@@ -70,17 +43,41 @@ impl RenderResult {
     }
 }
 
-impl RenderScene {
-    pub fn render(&mut self) -> RenderResult {
-        let mut result = RenderResult::new();
-        result.init(self);
+pub struct RenderScene {
+    // Declare here attributes 
 
+    // Tmp parameters (implementation step one)
+    pub color: RtRGB,
+    pub light_intensity: f32,
+
+    /// Stores result
+    pub result: RenderResult
+}
+
+impl Default for RenderScene {
+    fn default() -> Self {
+        Self {
+            color: RtRGB::default(),
+            light_intensity: 0.0,
+            result: RenderResult::new()
+        }
+    }
+}
+
+impl RenderScene {
+    /// Update scene parameters
+    pub fn setup_scene(&mut self, color: RtRGB, light_intensity: f32) {
+        self.color = color;
+        self.light_intensity = light_intensity;
+    }
+
+    /// Launch render
+    pub fn render(&mut self) {
         // Fill to color
-        for y in 0..self.width {
-            for x in 0..self.height {
-                result.set_pixel_color(usize::from(y), usize::from(x), self.color);
+        for y in 0..self.result.width {
+            for x in 0..self.result.height {
+                self.result.set_pixel_color(usize::from(y), usize::from(x), self.color);
             }
         }
-        return result
     }
 }
