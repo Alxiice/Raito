@@ -11,6 +11,10 @@
 
 use egui::*;
 use raito::*;
+use log::*;
+
+const WIDTH : usize = 400;
+const HEIGHT: usize = 400;
 
 pub struct RaitoRenderApp {
     // Declare here attributes 
@@ -18,7 +22,10 @@ pub struct RaitoRenderApp {
     // Basic render color
     color: Color32,
     light_intensity: f32,
-    scene: RenderScene
+    scene: RenderScene,
+
+    // Window size
+    color_image: ColorImage,
 }
 
 impl Default for RaitoRenderApp {
@@ -29,7 +36,9 @@ impl Default for RaitoRenderApp {
             // color: Color32::from_rgb(50, 100, 150).linear_multiply(0.25),
             color: Color32::from_rgb(50, 100, 150),
             light_intensity: 1.0,
-            scene: RenderScene::default()
+            scene: RenderScene::default(),
+            // Size
+            color_image: ColorImage::new([WIDTH, HEIGHT], Color32::from_rgb(50, 100, 150)),
         }
     }
 }
@@ -43,42 +52,39 @@ impl RaitoRenderApp {
         Default::default()
     }
 
+    fn update_image(&mut self) {
+        for y in 0..WIDTH {
+            for x in 0..HEIGHT {
+                self.color_image[(y, x)] = self.scene.result.get_pixel_color(y, x);
+            }
+        }
+    }
+
     pub fn start_render(&mut self) {
+        info!("> Start render");
+        
         // Setup scene
+        info!("> Update render scene");
         let color = RtRGB::new(self.color.r(), self.color.g(), self.color.b());
         self.scene.setup_scene(color, self.light_intensity);
+
         // Launch render
         self.scene.render();
+        info!("> Render finished");
 
-        // Debug
-        print!["Color : {} {} {} \n", 
-            self.scene.result.render_grid[10][10].r(),
-            self.scene.result.render_grid[10][10].g(),
-            self.scene.result.render_grid[10][10].b()];
+        self.update_image();
+
     }
 
     pub fn stop_render(&mut self) {
-        // TODO
+        warn!("> Stop render : Not implemented yet (no IPR)");
     }
 
-    pub fn renderview_update(&mut self, ui: &mut Ui) -> egui::Response {
-        // Create window
-        let (rect, response) =
-            ui.allocate_exact_size(egui::Vec2::splat(400.0), egui::Sense::drag());
-        
-        // TODO : Display pixels from self.scene.result
-
-        // Return response
-        response
-    }
 }
 
 impl eframe::App for RaitoRenderApp {
     /// Called each time the UI needs repainting, which may be many times per second.
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // Put your widgets into a `SidePanel`, `TopBottomPanel`, `CentralPanel`, `Window` or `Area`.
-        // For inspiration and more examples, go to https://emilk.github.io/egui
-
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
                 ui.menu_button("File", |ui| {
@@ -96,9 +102,12 @@ impl eframe::App for RaitoRenderApp {
             ui.heading("Raito Render");
 
             // Render view
-            Frame::canvas(ui.style()).show(ui, |ui| {
-                self.renderview_update(ui);
-            });
+            let img = ui.ctx().load_texture(
+                "renderview-img",
+                ImageData::from(self.color_image.clone()),
+                Default::default()
+            );
+            ui.add(egui::Image::new(&img));
 
             // ui.button("Start rendering")
             ui.horizontal(|ui| {

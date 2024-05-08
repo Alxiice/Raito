@@ -9,6 +9,8 @@
 /// =====================================================
 
 use crate::RtRGB;
+use egui::Color32;
+use log::*;
 
 pub struct RenderResult {
     width: u16,
@@ -38,8 +40,13 @@ impl RenderResult {
         render
     }
 
-    fn set_pixel_color(&mut self, y: usize, x: usize, color: RtRGB) {
+    pub fn set_pixel_color(&mut self, y: usize, x: usize, color: RtRGB) {
         self.render_grid[usize::from(y)][usize::from(x)] = color;
+    }
+
+    pub fn get_pixel_color(&mut self, y: usize, x: usize) -> Color32 {
+        let color = self.render_grid[usize::from(y)][usize::from(x)];
+        Color32::from_rgb(color.r(), color.g(), color.b())
     }
 }
 
