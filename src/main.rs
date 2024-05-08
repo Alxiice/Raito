@@ -1,5 +1,6 @@
 #![warn(clippy::all, rust_2018_idioms)]
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
+
 /// =====================================================
 ///                    Raito Render
 /// 
@@ -16,8 +17,8 @@ pub use render_window::RaitoRenderApp;
 use log::info;
 use clap::{Parser, ValueEnum};
 
-const WINDOW_WIDTH: f32 = 415.0;
-const MIN_WINDOW_HEIGHT: f32 = 520.0;
+const WINDOW_WIDTH: f32 = 410.0;
+const MIN_WINDOW_HEIGHT: f32 = 560.0;
 const MAX_WINDOW_HEIGHT: f32 = 800.0;
 
 /// Raito Rendering Engine
@@ -33,7 +34,7 @@ pub struct RaitoArgs {
 #[derive(ValueEnum, Clone, Debug, PartialEq)]
 enum RtLevel { Debug, Info, Warning, Error }
 
-fn main() -> eframe::Result<()> {
+fn main() -> Result<(), eframe::Error> {
     let args = RaitoArgs::parse();
 
     match args.log_level {
@@ -48,34 +49,16 @@ fn main() -> eframe::Result<()> {
 
     let native_options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
+            .with_decorations(false) // Hide the OS-specific "chrome" around the window
             .with_inner_size([WINDOW_WIDTH, MIN_WINDOW_HEIGHT])
             .with_min_inner_size([WINDOW_WIDTH, MIN_WINDOW_HEIGHT])
             .with_max_inner_size([WINDOW_WIDTH, MAX_WINDOW_HEIGHT])
-            .with_resizable(false)
-            .with_icon(
-                // NOTE: Adding an icon is optional
-                eframe::icon_data::from_png_bytes(&include_bytes!("../assets/icon-256.png")[..])
-                    .expect("Failed to load icon"),
-            ),
+            .with_transparent(true), // To have rounded corners we need transparency
         ..Default::default()
     };
     eframe::run_native(
         "Raito Render",
         native_options,
-        Box::new(|cc| Box::new(RaitoRenderApp::new(cc))),
+        Box::new(|_cc| Box::<RaitoRenderApp>::default()),
     )
-
-    // fn name(&self) -> &'static str {
-    //     "） Window Name"
-    // }
-    
-    // fn show(&mut self, ctx: &Context, open: &mut bool) {
-    //     use super::View as _;
-    //     Window::new(self.name())
-    //         .open(open)
-    //         .vscroll(false)
-    //         .resizable(false)
-    //         .default_size([300.0, 350.0])
-    //         .show(ctx, |ui| self.ui(ui));
-    // }
 }
