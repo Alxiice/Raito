@@ -37,7 +37,8 @@ impl Default for RaitoRenderApp {
             color: Color32::from_rgb(50, 100, 150),
             light_intensity: 1.0,
             scene: RenderScene::default(),
-            // Size
+            // Displayed image
+            // Pixels are ordered row by row, from top to bottom
             color_image: ColorImage::new([WIDTH, HEIGHT], Color32::from_rgb(50, 100, 150)),
         }
     }
@@ -53,8 +54,8 @@ impl RaitoRenderApp {
     }
 
     fn update_image(&mut self) {
-        for y in 0..WIDTH {
-            for x in 0..HEIGHT {
+        for y in 0..HEIGHT {
+            for x in 0..WIDTH {
                 self.color_image[(y, x)] = self.scene.result.get_pixel_color(y, x);
             }
         }
@@ -125,7 +126,7 @@ impl eframe::App for RaitoRenderApp {
                         
                         ui.label("Light intensity");
                         // ui.text_edit_singleline(&mut self.light_intensity);
-                        ui.add(egui::Slider::new(&mut self.light_intensity, 0.0..=10.0));
+                        ui.add(egui::Slider::new(&mut self.light_intensity, 0.0..=100.0));
                         ui.end_row();
                     });
             });

@@ -20,6 +20,7 @@ pub struct RtRGB {
     r: u8,
     g: u8,
     b: u8,
+    a: u8
 }
 
 impl Default for RtRGB {
@@ -27,16 +28,24 @@ impl Default for RtRGB {
         Self {
             r: 0,
             g: 0,
-            b: 0
+            b: 0,
+            a: 255
         }
     }
 }
 
 impl RtRGB {
     pub fn new(r: u8, g: u8, b: u8) -> Self {
+        let a: u8 = 255;
         Self {
-            r, g, b
+            r, g, b, a
         }
+    }
+
+    #[inline]
+    pub const fn from_rgb(r: u8, g: u8, b: u8) -> Self {
+        let a: u8 = 255;
+        Self { r, g, b, a }
     }
 
     pub fn set_color(&mut self, r: u8, g: u8, b: u8) {
@@ -56,4 +65,10 @@ impl RtRGB {
     pub fn b(&self) -> u8 {
         self.b
     }
+
+    pub const BLACK: Self = Self::from_rgb(0, 0, 0);
+    pub const WHITE: Self = Self::from_rgb(255, 255, 255);
+    pub const RED  : Self = Self::from_rgb(255, 0, 0);
+    pub const GREEN: Self = Self::from_rgb(0, 255, 0);
+    pub const BLUE : Self = Self::from_rgb(0, 0, 255);
 }
