@@ -12,33 +12,25 @@
 use egui::*;
 use raito::*;
 use log::*;
+use crate::render_window_params::*;
 
 const WIDTH : usize = 400;
 const HEIGHT: usize = 400;
 
 pub struct RaitoRenderApp {
-    // Declare here attributes 
-
-    // Basic render color
-    color: Color32,
-    light_intensity: f32,
+    // Parameters
+    parameters: RtParameters,
+    // Render Scene
     scene: RenderScene,
-
-    // Window size
+    // Displayed image
     color_image: ColorImage,
 }
 
 impl Default for RaitoRenderApp {
     fn default() -> Self {
         Self {
-            // Set here default values for declared attributes
-
-            // color: Color32::from_rgb(50, 100, 150).linear_multiply(0.25),
-            color: Color32::from_rgb(50, 100, 150),
-            light_intensity: 1.0,
+            parameters: RtParameters::default(),
             scene: RenderScene::default(),
-            // Displayed image
-            // Pixels are ordered row by row, from top to bottom
             color_image: ColorImage::new([WIDTH, HEIGHT], Color32::from_rgb(50, 100, 150)),
         }
     }
@@ -49,7 +41,6 @@ impl RaitoRenderApp {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         // This is also where you can customize the look and feel of egui using
         // `cc.egui_ctx.set_visuals` and `cc.egui_ctx.set_fonts`.
-
         Default::default()
     }
 
@@ -66,8 +57,12 @@ impl RaitoRenderApp {
         
         // Setup scene
         info!("> Update render scene");
-        let color = RtRGB::new(self.color.r(), self.color.g(), self.color.b());
-        self.scene.setup_scene(color, self.light_intensity);
+        let color = RtRGB::new(
+            self.parameters.color.r(), 
+            self.parameters.color.g(), 
+            self.parameters.color.b()
+        );
+        self.scene.setup_scene(color, self.parameters.light_intensity);
 
         // Launch render
         self.scene.render();
@@ -92,43 +87,40 @@ impl eframe::App for RaitoRenderApp {
     /// Called each time the UI needs repainting, which may be many times per second.
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         custom_window_frame(ctx, "Raito RenderView", |ui| {
-            // The central panel the region left after adding TopPanel's and SidePanel's
-            // ui.heading("Raito Render");
-
-            // Render view
-            let img = ui.ctx().load_texture(
-                "renderview-img",
-                ImageData::from(self.color_image.clone()),
-                Default::default()
-            );
-            ui.add(egui::Image::new(&img));
-
-            // ui.button("Start rendering")
             ui.horizontal(|ui| {
-                if ui.button("Start render").clicked() {
-                    self.start_render();
-                };
-                if ui.button("Stop render").clicked() {
-                    self.stop_render();
-                };
-            });
-
-            // Parameters
-            ui.collapsing("Parameters", |ui| {
-                Grid::new("render_params")
-                    .num_columns(2)
-                    .spacing([12.0, 8.0])
-                    .striped(true)
-                    .show(ui, |ui| {
-                        ui.label("Color");
-                        ui.color_edit_button_srgba(&mut self.color);
-                        ui.end_row();
-                        
-                        ui.label("Light intensity");
-                        // ui.text_edit_singleline(&mut self.light_intensity);
-                        ui.add(egui::Slider::new(&mut self.light_intensity, 0.0..=100.0));
-                        ui.end_row();
+                ui.vertical(|ui| {
+                    // ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
+                    ui.horizontal(|ui| {
+                        let available_size = [(WIDTH as f32) / 2.0 - 4.0, 25.0];
+                        let start_button = Button::new("Start Render");
+                        let stop_button = Button::new("Stop Render");
+                        if ui.add_sized(available_size, start_button).clicked() {
+                            self.start_render();
+                        };
+                        if ui.add_sized(available_size, stop_button).clicked() {
+                            self.stop_render();
+                        };
                     });
+                    // ui.horizontal(|ui| {
+                    //     if ui.button("Start render").clicked() {
+                    //         self.start_render();
+                    //     };
+                    //     ui.separator();
+                    //     if ui.button("Stop render").clicked() {
+                    //         self.stop_render();
+                    //     };
+                    // });
+
+                    // Render view
+                    let img = ui.ctx().load_texture(
+                        "renderview-img",
+                        ImageData::from(self.color_image.clone()),
+                        Default::default()
+                    );
+                    ui.add(egui::Image::new(&img));
+                });
+                // Parameters
+                setup_params_ui(ui, &mut self.parameters);
             });
         })
     }
