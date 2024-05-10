@@ -8,7 +8,7 @@
 ///   Defines render scene and methods to launch render.
 /// =====================================================
 
-use crate::RtRGB;
+use crate::{RtPoint3, RtRGB};
 use egui::Color32;
 use log::*;
 
@@ -54,8 +54,9 @@ pub struct RenderScene {
     // Declare here attributes 
 
     // Tmp parameters (implementation step one)
+    pub center: RtPoint3,
+    pub radius: f32,
     pub color: RtRGB,
-    pub light_intensity: f32,
 
     /// Stores result
     pub result: RenderResult
@@ -64,8 +65,9 @@ pub struct RenderScene {
 impl Default for RenderScene {
     fn default() -> Self {
         Self {
+            center: RtPoint3::default(),
+            radius: 0.0,
             color: RtRGB::default(),
-            light_intensity: 0.0,
             result: RenderResult::new()
         }
     }
@@ -73,16 +75,17 @@ impl Default for RenderScene {
 
 impl RenderScene {
     /// Update scene parameters
-    pub fn setup_scene(&mut self, color: RtRGB, light_intensity: f32) {
+    pub fn setup_scene(&mut self, center: RtPoint3, radius: f32, color: RtRGB) {
+        self.center = center;
+        self.radius = radius;
         self.color = color;
-        self.light_intensity = light_intensity;
     }
 
     fn render_pixel(&mut self, y: usize, x: usize) {
         self.result.set_pixel_color(y, x, self.color);
         let center = [self.result.width as f32 / 2.0, self.result.height as f32 / 2.0];
-        let rayon = self.light_intensity;
-        if (y as f32 - center[0]).powf(2.0) + (x as f32 - center[1]).powf(2.0) < rayon.powf(2.0) {
+        let radius = self.radius;
+        if (y as f32 - center[0]).powf(2.0) + (x as f32 - center[1]).powf(2.0) < radius.powf(2.0) {
             self.result.set_pixel_color(y, x, RtRGB::RED);
         }
     }

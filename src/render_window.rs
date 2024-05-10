@@ -62,7 +62,7 @@ impl RaitoRenderApp {
             self.parameters.color.g(), 
             self.parameters.color.b()
         );
-        self.scene.setup_scene(color, self.parameters.light_intensity);
+        self.scene.setup_scene(self.parameters.center, self.parameters.radius, color);
 
         // Launch render
         self.scene.render();
@@ -120,7 +120,9 @@ impl eframe::App for RaitoRenderApp {
                     ui.add(egui::Image::new(&img));
                 });
                 // Parameters
-                setup_params_ui(ui, &mut self.parameters);
+                ui.vertical(|ui| {
+                    setup_params_ui(ui, &mut self.parameters);
+                });
             });
         })
     }

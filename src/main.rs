@@ -18,7 +18,7 @@ mod render_window_params;
 use log::info;
 use clap::{Parser, ValueEnum};
 
-const WINDOW_WIDTH: f32 = 700.0;
+const WINDOW_WIDTH: f32 = 680.0;
 const MIN_WINDOW_HEIGHT: f32 = 470.0;
 const MAX_WINDOW_HEIGHT: f32 = 470.0;
 
