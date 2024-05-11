@@ -5,8 +5,7 @@
 /// - Alice Sonolet <alice.sonolet@gmail.com>
 /// 
 /// Module description :
-///   Opens a render window to load a scene and launch a 
-///   render.
+///   Parameters exposed in the render view
 /// =====================================================
 
 use egui::*;
@@ -41,20 +40,26 @@ fn sphere_ui(ui: &mut egui::Ui, params: &mut RtParameters) {
     ui.horizontal(|ui| {
         ui.add(
             DragValue::new(&mut params.center.x)
-                .speed(1.0)
-                .clamp_range(-100.0..=100.0)
+                .speed(0.1)
+                .min_decimals(1)
+                .max_decimals(5)
+                .clamp_range(-10.0..=10.0)
                 .prefix("x: ")
         );
         ui.add(
             DragValue::new(&mut params.center.y)
-                .speed(1.0)
-                .clamp_range(-100.0..=100.0)
+                .speed(0.1)
+                .min_decimals(1)
+                .max_decimals(5)
+                .clamp_range(-10.0..=10.0)
                 .prefix("y: ")
         );
         ui.add(
             DragValue::new(&mut params.center.z)
-                .speed(1.0)
-                .clamp_range(-100.0..=100.0)
+                .speed(0.1)
+                .min_decimals(1)
+                .max_decimals(5)
+                .clamp_range(-10.0..=10.0)
                 .prefix("z: ")
         );
     });

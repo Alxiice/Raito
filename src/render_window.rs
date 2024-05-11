@@ -57,7 +57,7 @@ impl RaitoRenderApp {
         
         // Setup scene
         info!("> Update render scene");
-        let color = RtRGB::new(
+        let color = RtRGBA::new(
             self.parameters.color.r(), 
             self.parameters.color.g(), 
             self.parameters.color.b()
@@ -72,8 +72,10 @@ impl RaitoRenderApp {
 
     }
 
-    pub fn stop_render(&mut self) {
-        warn!("> Stop render : Not implemented yet (no IPR)");
+    pub fn stop_render(&mut self, ctx: &egui::Context) {
+        // TODO : When IPR is implemented, stops the IPR
+        info!("> Closes Raito RenderView");
+        ctx.send_viewport_cmd(egui::ViewportCommand::Close);
     }
 
 }
@@ -98,7 +100,7 @@ impl eframe::App for RaitoRenderApp {
                             self.start_render();
                         };
                         if ui.add_sized(available_size, stop_button).clicked() {
-                            self.stop_render();
+                            self.stop_render(ctx);
                         };
                     });
                     // ui.horizontal(|ui| {

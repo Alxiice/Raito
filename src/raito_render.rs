@@ -8,7 +8,7 @@
 ///   Defines render scene and methods to launch render.
 /// =====================================================
 
-use crate::{RtPoint3, RtRGB};
+use crate::{RtPoint3, RtRGBA};
 use egui::Color32;
 use log::*;
 
@@ -17,7 +17,7 @@ pub struct RenderResult {
     height: u16,
     /// Array of array of color
     /// To access : render_grid[col][row] -> index from top left to bottom right
-    pub render_grid: Vec<Vec<RtRGB>>,
+    pub render_grid: Vec<Vec<RtRGBA>>,
 }
 
 impl RenderResult {
@@ -34,13 +34,13 @@ impl RenderResult {
             render.render_grid.push(Vec::with_capacity(usize::from(render.height)));
             // For each cell add color
             for _ in 0..render.width {
-                render.render_grid[usize::from(y)].push(RtRGB::default())
+                render.render_grid[usize::from(y)].push(RtRGBA::default())
             }
         }
         render
     }
 
-    pub fn set_pixel_color(&mut self, y: usize, x: usize, color: RtRGB) {
+    pub fn set_pixel_color(&mut self, y: usize, x: usize, color: RtRGBA) {
         self.render_grid[usize::from(y)][usize::from(x)] = color;
     }
 
@@ -51,12 +51,10 @@ impl RenderResult {
 }
 
 pub struct RenderScene {
-    // Declare here attributes 
-
     // Tmp parameters (implementation step one)
     pub center: RtPoint3,
     pub radius: f32,
-    pub color: RtRGB,
+    pub color: RtRGBA,
 
     /// Stores result
     pub result: RenderResult
@@ -67,7 +65,7 @@ impl Default for RenderScene {
         Self {
             center: RtPoint3::default(),
             radius: 0.0,
-            color: RtRGB::default(),
+            color: RtRGBA::default(),
             result: RenderResult::new()
         }
     }
@@ -75,7 +73,7 @@ impl Default for RenderScene {
 
 impl RenderScene {
     /// Update scene parameters
-    pub fn setup_scene(&mut self, center: RtPoint3, radius: f32, color: RtRGB) {
+    pub fn setup_scene(&mut self, center: RtPoint3, radius: f32, color: RtRGBA) {
         self.center = center;
         self.radius = radius;
         self.color = color;
@@ -86,7 +84,7 @@ impl RenderScene {
         let center = [self.result.width as f32 / 2.0, self.result.height as f32 / 2.0];
         let radius = self.radius;
         if (y as f32 - center[0]).powf(2.0) + (x as f32 - center[1]).powf(2.0) < radius.powf(2.0) {
-            self.result.set_pixel_color(y, x, RtRGB::RED);
+            self.result.set_pixel_color(y, x, RtRGBA::RED);
         }
     }
 

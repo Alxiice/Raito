@@ -5,8 +5,7 @@
 /// - Alice Sonolet <alice.sonolet@gmail.com>
 /// 
 /// Module description :
-///   Defines Raito Types (Rt) that the render engine 
-///   uses.
+///   Defines types that the render engine uses.
 /// =====================================================
 
 // ========================================
@@ -15,15 +14,16 @@
 
 use std::default;
 
+/// RGBA Color
 #[derive(Copy, Clone)]
-pub struct RtRGB {
+pub struct RtRGBA {
     r: u8,
     g: u8,
     b: u8,
     a: u8
 }
 
-impl Default for RtRGB {
+impl Default for RtRGBA {
     fn default() -> Self {
         Self {
             r: 0,
@@ -34,7 +34,7 @@ impl Default for RtRGB {
     }
 }
 
-impl RtRGB {
+impl RtRGBA {
     pub fn new(r: u8, g: u8, b: u8) -> Self {
         let a: u8 = 255;
         Self {
@@ -101,6 +101,15 @@ pub struct RtVec3 {
     pub z: f32
 }
 
+/// Implements Add for RtPoint3 - RtPoint3
+/// Result is a vector
+impl std::ops::Sub<RtPoint3> for RtPoint3 {
+    type Output = RtVec3;
+    fn sub(self, rhs: RtPoint3) -> Self::Output {
+        Self::Output { x: rhs.x - self.x, y: rhs.y - self.y, z: rhs.z - self.z }
+    }
+}
+
 /// Implements Mul for RtVec3 * f32
 impl std::ops::Mul<f32> for RtVec3 {
     type Output = Self;
@@ -114,6 +123,14 @@ impl std::ops::Mul<RtVec3> for f32 {
     type Output = RtVec3;
     fn mul(self, rhs: RtVec3) -> Self::Output {
         Self::Output { x: rhs.x * self, y: rhs.y * self, z: rhs.z * self }
+    }
+}
+
+/// Implements Div for RtVec3 / f32
+impl std::ops::Div<f32> for RtVec3 {
+    type Output = RtVec3;
+    fn div(self, rhs: f32) -> Self::Output {
+        Self::Output { x: self.x / rhs, y: self.y / rhs, z: self.z / rhs }
     }
 }
 
@@ -133,29 +150,14 @@ impl std::ops::Add<RtVec3> for RtPoint3 {
     }
 }
 
-// ========================================
-//  Ray
-// ========================================
-
-pub struct RtRay {
-    pub origin: RtPoint3,
-    pub dir: RtVec3
-}
-
-impl RtRay {
-    /// Function that gives P(t) the position where we land 
-    /// after tracing the ray for a distance t
-    pub fn at(&mut self, t: f32) -> RtPoint3 {
-        self.origin + t * self.dir
+impl RtVec3 {
+    /// Vector norm
+    fn get_norm(&self) -> f32 {
+        (self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
     }
-}
 
-
-// ========================================
-//  Camera
-// ========================================
-
-pub struct RtCamera {
-    pub center: RtPoint3,
-    pub focal_length: f32
+    /// Normalized vector
+    pub fn normalize(self) -> Self {
+        self / self.get_norm()
+    }
 }
