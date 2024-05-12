@@ -92,19 +92,6 @@ impl std::fmt::Display for RtPoint3 {
     }
 }
 
-/// 2D Vector
-#[derive(Default, Debug, PartialEq, Copy, Clone)]
-pub struct RtVec2 {
-    pub x: f32,
-    pub y: f32
-}
-
-impl std::fmt::Display for RtVec2 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "<RtVec3 ({}, {})>", self.x, self.y)
-    }
-}
-
 /// 3D Vector
 #[derive(Default, Debug, PartialEq, Copy, Clone)]
 pub struct RtVec3 {
@@ -120,50 +107,64 @@ impl std::fmt::Display for RtVec3 {
 }
 
 
-/// Implements Add for RtPoint3 - RtPoint3
-/// Result is a vector
 impl std::ops::Sub<RtPoint3> for RtPoint3 {
     type Output = RtVec3;
+    /// Implements Add for RtPoint3 - RtPoint3
+    /// 
+    /// Result is a vector
     fn sub(self, rhs: RtPoint3) -> Self::Output {
         Self::Output { x: rhs.x - self.x, y: rhs.y - self.y, z: rhs.z - self.z }
     }
 }
 
-/// Implements Mul for RtVec3 * f32
 impl std::ops::Mul<f32> for RtVec3 {
     type Output = Self;
+    /// Implements Mul for RtVec3 * f32
     fn mul(self, rhs: f32) -> Self::Output {
         Self::Output { x: self.x * rhs, y: self.y * rhs, z: self.z * rhs }
     }
 }
 
-/// Implements Mul for f32 * RtVec3
 impl std::ops::Mul<RtVec3> for f32 {
     type Output = RtVec3;
+    /// Implements Mul for f32 * RtVec3
     fn mul(self, rhs: RtVec3) -> Self::Output {
         Self::Output { x: rhs.x * self, y: rhs.y * self, z: rhs.z * self }
     }
 }
 
-/// Implements Div for RtVec3 / f32
+impl std::ops::Mul<RtVec3> for RtVec3 {
+    type Output = f32;
+    /// Implements Mul for f32 * RtVec3
+    fn mul(self, rhs: RtVec3) -> Self::Output {
+        let product = 
+            self.x * rhs.x +
+            self.y * rhs.y +
+            self.z * rhs.z;
+    
+        product
+    }
+}
+
 impl std::ops::Div<f32> for RtVec3 {
     type Output = RtVec3;
+    /// Implements Div for RtVec3 / f32
     fn div(self, rhs: f32) -> Self::Output {
         Self::Output { x: self.x / rhs, y: self.y / rhs, z: self.z / rhs }
     }
 }
 
-/// Implements Add for RtVec3 + RtPoint3
 impl std::ops::Add<RtPoint3> for RtVec3 {
     type Output = RtPoint3;
+    /// Implements Add for RtVec3 + RtPoint3
     fn add(self, rhs: RtPoint3) -> Self::Output {
         Self::Output { x: rhs.x + self.x, y: rhs.y + self.y, z: rhs.z + self.z }
     }
 }
 
-/// Implements Add for RtPoint3 + RtVec3
 impl std::ops::Add<RtVec3> for RtPoint3 {
     type Output = RtPoint3;
+    /// Implements Add for RtPoint3 + RtVec3
     fn add(self, rhs: RtVec3) -> Self::Output {
         Self::Output { x: rhs.x + self.x, y: rhs.y + self.y, z: rhs.z + self.z }
     }
@@ -178,5 +179,9 @@ impl RtVec3 {
     /// Normalized vector
     pub fn normalize(self) -> Self {
         self / self.get_norm()
+    }
+
+    pub fn squared(self) -> f32 {
+        self * self
     }
 }
