@@ -47,7 +47,7 @@ impl RaitoRenderApp {
     fn update_image(&mut self) {
         for y in 0..HEIGHT {
             for x in 0..WIDTH {
-                self.color_image[(y, x)] = self.scene.result.get_pixel_color(y, x);
+                self.color_image[(x, y)] = self.scene.result.get_pixel_color(x, y);
             }
         }
     }
@@ -57,12 +57,13 @@ impl RaitoRenderApp {
         
         // Setup scene
         info!("> Update render scene");
-        let color = RtRGBA::new(
-            self.parameters.color.r(), 
-            self.parameters.color.g(), 
-            self.parameters.color.b()
-        );
-        self.scene.setup_scene(self.parameters.center, self.parameters.radius, color);
+        self.scene.setup_scene(
+            self.parameters.focal_distance,
+            self.parameters.light_intensity,
+            RtRGBA::from_color32(self.parameters.light_color),
+            RtRGBA::from_color32(self.parameters.sphere_color),
+            self.parameters.sphere_center,
+            self.parameters.sphere_radius);
 
         // Launch render
         self.scene.render();
@@ -138,18 +139,6 @@ fn custom_window_frame(ctx: &egui::Context, title: &str, add_contents: impl FnOn
         outer_margin: 0.5.into(), // so the stroke is within the bounds
         ..Default::default()
     };
-
-    // TopBottomPanel::top("top_panel").show(ctx, |ui| {
-    //     egui::menu::bar(ui, |ui| {
-    //         ui.menu_button("File", |ui| {
-    //             if ui.button("Quit").clicked() {
-    //                 ctx.send_viewport_cmd(egui::ViewportCommand::Close);
-    //             }
-    //         });
-    //         ui.add_space(16.0);
-    //         egui::widgets::global_dark_light_mode_buttons(ui);
-    //     });
-    // });
 
     CentralPanel::default().frame(panel_frame).show(ctx, |ui| {
         let app_rect = ui.max_rect();

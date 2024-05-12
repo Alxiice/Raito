@@ -13,25 +13,47 @@ use log::*;
 use raito::RtPoint3;
 
 pub struct RtParameters {
-    pub color: Color32,
-    pub center: RtPoint3,
-    pub radius: f32,
+    // Camera params
+    pub focal_distance: f32,
+    // Light params
+    pub light_intensity: f32,
+    pub light_color: Color32,
+    // Sphere params
+    pub sphere_color: Color32,
+    pub sphere_center: RtPoint3,
+    pub sphere_radius: f32,
 }
 
 impl Default for RtParameters {
     fn default() -> Self {
         Self {
-            color: Color32::from_rgb(50, 100, 150),
-            center: RtPoint3::default(),
-            radius: 10.0
+            // Camera params
+            focal_distance: 1.0,
+            // Light params
+            light_intensity: 1.0,
+            light_color: Color32::from_rgb(200, 200, 200),
+            // Sphere params
+            sphere_color: Color32::from_rgb(50, 100, 150),
+            sphere_center: RtPoint3::default(),
+            sphere_radius: 10.0
         }
     }
 }
 
 fn camera_ui(ui: &mut egui::Ui, params: &mut RtParameters) {
-    ui.label("Center");
-    // TODO : add camera parameters
-    ui.label("TODO");
+    ui.label("Focal distance");
+    ui.add(egui::Slider::new(&mut params.focal_distance, 10.0..=100.0)
+        .drag_value_speed(1.0));
+    ui.end_row();
+}
+
+fn light_ui(ui: &mut egui::Ui, params: &mut RtParameters) {
+    ui.label("Intensity");
+    ui.add(egui::Slider::new(&mut params.light_intensity, 0.0..=10.0));
+    ui.end_row();
+
+    ui.label("Color");
+    ui.color_edit_button_srgba(&mut params.light_color);
     ui.end_row();
 }
 
@@ -39,38 +61,39 @@ fn sphere_ui(ui: &mut egui::Ui, params: &mut RtParameters) {
     ui.label("Center");
     ui.horizontal(|ui| {
         ui.add(
-            DragValue::new(&mut params.center.x)
+            DragValue::new(&mut params.sphere_center.x)
                 .speed(0.1)
                 .min_decimals(1)
                 .max_decimals(5)
-                .clamp_range(-10.0..=10.0)
+                .clamp_range(-50.0..=50.0)
                 .prefix("x: ")
         );
         ui.add(
-            DragValue::new(&mut params.center.y)
+            DragValue::new(&mut params.sphere_center.y)
                 .speed(0.1)
                 .min_decimals(1)
                 .max_decimals(5)
-                .clamp_range(-10.0..=10.0)
+                .clamp_range(-50.0..=50.0)
                 .prefix("y: ")
         );
         ui.add(
-            DragValue::new(&mut params.center.z)
+            DragValue::new(&mut params.sphere_center.z)
                 .speed(0.1)
                 .min_decimals(1)
                 .max_decimals(5)
-                .clamp_range(-10.0..=10.0)
+                .clamp_range(-50.0..=0.0)
                 .prefix("z: ")
         );
     });
     ui.end_row();
 
     ui.label("Radius");
-    ui.add(egui::Slider::new(&mut params.radius, 0.0..=100.0));
+    ui.add(egui::Slider::new(&mut params.sphere_radius, 0.0..=10.0)
+        .drag_value_speed(0.1));
     ui.end_row();
     
     ui.label("Color");
-    ui.color_edit_button_srgba(&mut params.color);
+    ui.color_edit_button_srgba(&mut params.sphere_color);
     ui.end_row();
 }
 
@@ -84,6 +107,16 @@ pub fn setup_params_ui(ui: &mut egui::Ui, params: &mut RtParameters) {
             .spacing([12.0, 8.0])
             .striped(true)
             .show(ui, |ui| camera_ui(ui, params));
+    });
+
+    egui::CollapsingHeader::new("Light Parameters")
+        .default_open(true)
+        .show(ui, |ui| {
+            Grid::new("light_params")
+            .num_columns(2)
+            .spacing([12.0, 8.0])
+            .striped(true)
+            .show(ui, |ui| light_ui(ui, params));
     });
 
     egui::CollapsingHeader::new("Sphere Parameters")

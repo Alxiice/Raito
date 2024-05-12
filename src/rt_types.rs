@@ -12,7 +12,7 @@
 //  Colors
 // ========================================
 
-use std::default;
+use egui::Color32;
 
 /// RGBA Color
 #[derive(Copy, Clone)]
@@ -46,6 +46,15 @@ impl RtRGBA {
     pub const fn from_rgb(r: u8, g: u8, b: u8) -> Self {
         let a: u8 = 255;
         Self { r, g, b, a }
+    }
+
+    pub const fn from_color32(color: Color32) -> Self {
+        Self { 
+            r: color.r(),
+            g: color.g(),
+            b: color.b(),
+            a: color.a()
+        }
     }
 
     pub fn set_color(&mut self, r: u8, g: u8, b: u8) {

@@ -44,21 +44,28 @@ impl RenderResult {
         render
     }
 
-    pub fn set_pixel_color(&mut self, y: usize, x: usize, color: RtRGBA) {
+    pub fn set_pixel_color(&mut self, x: usize, y: usize, color: RtRGBA) {
+        let y = usize::from(self.height) - (y + 1);  // Add 1 for index 0
+        // TODO : is rendergrid[y][x] correct ?
         self.render_grid[usize::from(y)][usize::from(x)] = color;
     }
 
-    pub fn get_pixel_color(&mut self, y: usize, x: usize) -> Color32 {
+    pub fn get_pixel_color(&mut self, x: usize, y: usize) -> Color32 {
         let color = self.render_grid[usize::from(y)][usize::from(x)];
         Color32::from_rgb(color.r(), color.g(), color.b())
     }
 }
 
 pub struct RenderScene {
-    // Tmp parameters (implementation step one)
-    pub center: RtPoint3,
-    pub radius: f32,
-    pub color: RtRGBA,
+    // Camera params
+    pub focal_distance: f32,
+    // Light params
+    pub light_intensity: f32,
+    pub light_color: RtRGBA,
+    // Sphere params
+    pub sphere_color: RtRGBA,
+    pub sphere_center: RtPoint3,
+    pub sphere_radius: f32,
 
     /// Stores result
     pub result: RenderResult
@@ -67,9 +74,17 @@ pub struct RenderScene {
 impl Default for RenderScene {
     fn default() -> Self {
         Self {
-            center: RtPoint3::default(),
-            radius: 0.0,
-            color: RtRGBA::default(),
+            // Camera params
+            focal_distance: 1.0,
+            // Light params
+            light_intensity: 1.0,
+            light_color: RtRGBA::default(),
+            // Sphere params
+            sphere_color: RtRGBA::default(),
+            sphere_center: RtPoint3::default(),
+            sphere_radius: 0.0,
+
+            // Result
             result: RenderResult::new()
         }
     }
@@ -77,54 +92,51 @@ impl Default for RenderScene {
 
 impl RenderScene {
     /// Update scene parameters
-    pub fn setup_scene(&mut self, center: RtPoint3, radius: f32, color: RtRGBA) {
-        self.center = center;
-        self.radius = radius;
-        self.color = color;
-    }
-
-    fn render_pixel(&mut self, y: usize, x: usize) {
-        self.result.set_pixel_color(y, x, self.color);
-        let center = [self.result.width as f32 / 2.0, self.result.height as f32 / 2.0];
-        let radius = self.radius;
-        if (y as f32 - center[0]).powf(2.0) + (x as f32 - center[1]).powf(2.0) < radius.powf(2.0) {
-            self.result.set_pixel_color(y, x, RtRGBA::RED);
-        }
+    pub fn setup_scene(&mut self, 
+        focal_distance: f32, 
+        light_intensity: f32, 
+        light_color: RtRGBA,
+        sphere_color: RtRGBA,
+        sphere_center: RtPoint3,
+        sphere_radius: f32)
+    {
+        // Camera params
+        self.focal_distance = focal_distance;
+        // Light params
+        self.light_intensity = light_intensity;
+        self.light_color     = light_color;
+        // Sphere params
+        self.sphere_color  = sphere_color;
+        self.sphere_center = sphere_center;
+        self.sphere_radius = sphere_radius;
     }
 
     fn RtTraceRay(&mut self, ray: RtRay) -> RtHit {
-        let sphere = RtSphere { center: self.center, radius: self.radius };
+        let sphere = RtSphere { center: self.sphere_center, radius: self.sphere_radius };
         let is_intersect = sphere.intersect(ray);
         RtHit::new(is_intersect)
     }
 
     /// Launch render
     pub fn render(&mut self) {
-        // Fill to color
-        // for y in 0..self.result.height {
-        //     for x in 0..self.result.width {
-        //         self.render_pixel(usize::from(y), usize::from(x));
-        //     }
-        // }
-
         // TODO : for now the camera
         // - center is at 0
         // - direction is towards the -y direction
-        // - focal length is 1
         // 
         // We want to be able to change that, move and rotate the camera
         // We need to implement world and camera space
     
-        let camera = RtCamera::new(self.result.width); // self.result.width
+        let mut camera = RtCamera::new(self.result.width); // self.result.width
+        camera.focal_length = self.focal_distance;
         let cam_rays = RtCameraRayIterator::new(camera);
         for camera_ray in cam_rays {
             let hit = self.RtTraceRay(camera_ray.ray);
             if hit.hit {
                 self.result.set_pixel_color(
-                    usize::from(camera_ray.y), usize::from(camera_ray.x), RtRGBA::RED);
+                    usize::from(camera_ray.x), usize::from(camera_ray.y), self.sphere_color);
             } else {
                 self.result.set_pixel_color(
-                    usize::from(camera_ray.y), usize::from(camera_ray.x), self.color);
+                    usize::from(camera_ray.x), usize::from(camera_ray.y), self.light_color);
             }
         }
     }

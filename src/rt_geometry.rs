@@ -27,10 +27,12 @@ pub struct RtSphere {
 // ========================================
 
 pub trait RtIntersect {
+    /// Compute intersection with ray and geometry element
     fn intersect(&self, ray: RtRay) -> bool;
 }
 
 impl RtIntersect for RtSphere {
+    /// Compute intersection with ray and sphere
     fn intersect(&self, ray: RtRay) -> bool {
         let a = ray.dir * ray.dir;
         let b = 2.0 * ray.dir * (ray.origin - self.center);
