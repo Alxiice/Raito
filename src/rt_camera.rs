@@ -10,7 +10,9 @@
 
 use crate::rt_types::*;
 use crate::rt_ray::*;
+use std::alloc;
 use std::cell::OnceCell;
+use log::*;
 
 /// Describes a camera
 /// 
@@ -63,7 +65,9 @@ impl RtCamera {
         }
     }
 
-    /// Get camera ray
+    /// Sample camera ray
+    /// 
+    /// We shoot the ray at the center of the pixel for each pixel in the grid
     /// 
     /// (x: column, y: row) : pixel position
     fn get_camera_ray(&self, x: u16, y: u16) -> RtRay {
@@ -71,8 +75,8 @@ impl RtCamera {
         // Start with top left
         let mut viewport_point = self.top_left();
         // Offset with the given pixel
-        viewport_point.x += self.aspect_ratio * (x as f32);
-        viewport_point.y += 1.0 * y as f32;
+        viewport_point.x += (self.aspect_ratio / *self.camera_width()  as f32) * (x as f32 + 0.5);
+        viewport_point.y += (1.0               / *self.camera_height() as f32) * (y as f32 + 0.5);
         let direction = viewport_point - self.center;
         // Create the ray from the center
         RtRay {
@@ -82,21 +86,38 @@ impl RtCamera {
     }
 }
 
+/// Holds ray and 
+pub struct RtCameraRay {
+    pub ray: RtRay,
+    pub x: u16,
+    pub y: u16
+}
+
+impl RtCameraRay {
+    pub fn new(ray: RtRay, x: u16, y: u16) -> Self {
+        Self{ ray, x, y }
+    }
+}
+
 /// Could be reimplemented as trait to iterate in 
 /// - buckets
 /// - also not top left to bottom right but allow circular, etc
-struct RtCameraRayIterator {
+pub struct RtCameraRayIterator {
+    // Stop condition
+    stop: bool,
     /// Column position
     current_x: u16,
     /// Row position
     current_y: u16,
+    // Camera
     camera: RtCamera
 }
 
 impl RtCameraRayIterator {
     /// Creates an iterator for camera rays
-    fn new(camera: RtCamera) -> Self {
+    pub fn new(camera: RtCamera) -> Self {
         Self {
+            stop: false,
             current_x: 0,
             current_y: 0,
             camera
@@ -105,15 +126,24 @@ impl RtCameraRayIterator {
 }
 
 impl Iterator for RtCameraRayIterator {
-    type Item = RtRay;
+    type Item = RtCameraRay;
 
     fn next(&mut self) -> Option<Self::Item> {
+        if self.stop {
+            return None
+        }
+        let camera_ray = Self::Item {
+            ray: self.camera.get_camera_ray(self.current_x, self.current_y),
+            x: self.current_x,
+            y: self.current_y
+        };
+
         // Compute next pixel position
         if self.current_x >= self.camera.camera_width() - 1 {
             // Cannot pick right pixel
             if self.current_y >= self.camera.camera_height() - 1 {
                 // Cannot pick the next row
-                return None
+                self.stop = true;
             } else {
                 // Pick first pixel of the bottom line
                 self.current_x  = 0;
@@ -122,6 +152,6 @@ impl Iterator for RtCameraRayIterator {
         } else {
             self.current_x += 1;
         }
-        Some(self.camera.get_camera_ray(self.current_x, self.current_y))
+        Some(camera_ray)
     }
 }

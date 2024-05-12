@@ -23,3 +23,24 @@ impl RtRay {
         self.origin + t * self.dir
     }
 }
+
+impl std::fmt::Display for RtRay {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "<RtRay O=({}, {}, {}), dir=({}, {}, {})>", 
+            self.origin.x, self.origin.y, self.origin.z,
+            self.dir.x, self.dir.y, self.dir.z)
+    }
+}
+
+
+/// Holds ray hit info
+pub struct RtHit {
+    // Hit infos
+    pub hit: bool
+}
+
+impl RtHit {
+    pub fn new(hit: bool) -> Self {
+        Self { hit }
+    }
+}

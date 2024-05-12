@@ -8,7 +8,11 @@
 ///   Defines render scene and methods to launch render.
 /// =====================================================
 
-use crate::{RtPoint3, RtRGBA};
+// use crate::{RtCamera, RtPoint3, RtRGBA};
+use crate::rt_types::*;
+use crate::rt_camera::*;
+use crate::rt_ray::*;
+use crate::rt_geometry::*;
 use egui::Color32;
 use log::*;
 
@@ -88,12 +92,39 @@ impl RenderScene {
         }
     }
 
+    fn RtTraceRay(&mut self, ray: RtRay) -> RtHit {
+        let sphere = RtSphere { center: self.center, radius: self.radius };
+        let is_intersect = sphere.intersect(ray);
+        RtHit::new(is_intersect)
+    }
+
     /// Launch render
     pub fn render(&mut self) {
         // Fill to color
-        for y in 0..self.result.height {
-            for x in 0..self.result.width {
-                self.render_pixel(usize::from(y), usize::from(x));
+        // for y in 0..self.result.height {
+        //     for x in 0..self.result.width {
+        //         self.render_pixel(usize::from(y), usize::from(x));
+        //     }
+        // }
+
+        // TODO : for now the camera
+        // - center is at 0
+        // - direction is towards the -y direction
+        // - focal length is 1
+        // 
+        // We want to be able to change that, move and rotate the camera
+        // We need to implement world and camera space
+    
+        let camera = RtCamera::new(self.result.width); // self.result.width
+        let cam_rays = RtCameraRayIterator::new(camera);
+        for camera_ray in cam_rays {
+            let hit = self.RtTraceRay(camera_ray.ray);
+            if hit.hit {
+                self.result.set_pixel_color(
+                    usize::from(camera_ray.y), usize::from(camera_ray.x), RtRGBA::RED);
+            } else {
+                self.result.set_pixel_color(
+                    usize::from(camera_ray.y), usize::from(camera_ray.x), self.color);
             }
         }
     }

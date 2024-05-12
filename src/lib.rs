@@ -17,3 +17,5 @@ mod rt_ray;
 pub use rt_ray::*;
 mod rt_camera;
 pub use rt_camera::*;
+mod rt_geometry;
+pub use rt_geometry::*;

@@ -86,11 +86,23 @@ pub struct RtPoint3 {
     pub z: f32
 }
 
+impl std::fmt::Display for RtPoint3 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "<RtPoint3 ({}, {}, {})>", self.x, self.y, self.z)
+    }
+}
+
 /// 2D Vector
 #[derive(Default, Debug, PartialEq, Copy, Clone)]
 pub struct RtVec2 {
     pub x: f32,
     pub y: f32
+}
+
+impl std::fmt::Display for RtVec2 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "<RtVec3 ({}, {})>", self.x, self.y)
+    }
 }
 
 /// 3D Vector
@@ -100,6 +112,13 @@ pub struct RtVec3 {
     pub y: f32,
     pub z: f32
 }
+
+impl std::fmt::Display for RtVec3 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "<RtVec3 ({}, {}, {})>", self.x, self.y, self.z)
+    }
+}
+
 
 /// Implements Add for RtPoint3 - RtPoint3
 /// Result is a vector
