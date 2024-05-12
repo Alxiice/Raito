@@ -41,7 +41,7 @@ impl Default for RtParameters {
 }
 
 fn camera_ui(ui: &mut egui::Ui, params: &mut RtParameters) {
-    ui.label("Focal distance");
+    ui.label("FOV");
     // 20~=250mm, 150~=6mm
     ui.add(egui::Slider::new(&mut params.camera_fov, 10.0..=150.0)
         .drag_value_speed(1.0));
