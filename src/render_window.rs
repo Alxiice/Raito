@@ -16,6 +16,7 @@ use crate::render_window_params::*;
 
 const WIDTH : usize = 400;
 const HEIGHT: usize = 400;
+const DEFAULT_COLOR: Color32 = Color32::from_rgb(0, 0, 0);
 
 pub struct RaitoRenderApp {
     // Parameters
@@ -31,7 +32,7 @@ impl Default for RaitoRenderApp {
         Self {
             parameters: RtParameters::default(),
             scene: RenderScene::default(),
-            color_image: ColorImage::new([WIDTH, HEIGHT], Color32::from_rgb(50, 100, 150)),
+            color_image: ColorImage::new([WIDTH, HEIGHT], DEFAULT_COLOR),
         }
     }
 }
@@ -58,7 +59,7 @@ impl RaitoRenderApp {
         // Setup scene
         info!("> Update render scene");
         self.scene.setup_scene(
-            self.parameters.focal_distance,
+            self.parameters.camera_fov,
             self.parameters.light_intensity,
             RtRGBA::from_color32(self.parameters.light_color),
             RtRGBA::from_color32(self.parameters.sphere_color),

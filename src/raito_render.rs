@@ -58,7 +58,7 @@ impl RenderResult {
 
 pub struct RenderScene {
     // Camera params
-    pub focal_distance: f32,
+    pub camera_fov: f32,
     // Light params
     pub light_intensity: f32,
     pub light_color: RtRGBA,
@@ -75,7 +75,7 @@ impl Default for RenderScene {
     fn default() -> Self {
         Self {
             // Camera params
-            focal_distance: 1.0,
+            camera_fov: 1.0,
             // Light params
             light_intensity: 1.0,
             light_color: RtRGBA::default(),
@@ -93,7 +93,7 @@ impl Default for RenderScene {
 impl RenderScene {
     /// Update scene parameters
     pub fn setup_scene(&mut self, 
-        focal_distance: f32, 
+        camera_fov: f32, 
         light_intensity: f32, 
         light_color: RtRGBA,
         sphere_color: RtRGBA,
@@ -101,7 +101,7 @@ impl RenderScene {
         sphere_radius: f32)
     {
         // Camera params
-        self.focal_distance = focal_distance;
+        self.camera_fov = camera_fov;
         // Light params
         self.light_intensity = light_intensity;
         self.light_color     = light_color;
@@ -127,7 +127,7 @@ impl RenderScene {
         // We need to implement world and camera space
     
         let mut camera = RtCamera::new(self.result.width); // self.result.width
-        camera.focal_length = self.focal_distance;
+        camera.camera_fov = self.camera_fov;
         let cam_rays = RtCameraRayIterator::new(camera);
         for camera_ray in cam_rays {
             let hit = self.RtTraceRay(camera_ray.ray);

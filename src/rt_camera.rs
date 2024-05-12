@@ -19,7 +19,7 @@ use log::*;
 /// Right handed system
 pub struct RtCamera {
     pub center: RtPoint3,
-    pub focal_length: f32,
+    pub camera_fov: f32,
     pub aspect_ratio: f32,
     camera_width : OnceCell<u16>,
     camera_height: OnceCell<u16>,
@@ -31,7 +31,7 @@ impl RtCamera {
         let aspect_ratio = 1.0;
         Self { 
             center: RtPoint3::default(),
-            focal_length: 1.0,
+            camera_fov: 50.0,
             aspect_ratio,
             camera_width: OnceCell::from(camera_width),
             camera_height: OnceCell::from((camera_width as f32 / aspect_ratio) as u16)
@@ -61,7 +61,7 @@ impl RtCamera {
         RtPoint3 {
             x: -(self.aspect_ratio) / 2.0,  // Left position (aspect / 2)
             y: -0.5,  // Top position (1 / 2)
-            z: -(self.focal_length)
+            z: - (self.aspect_ratio) / (self.camera_fov / 2.0).to_radians().tan()
         }
     }
 

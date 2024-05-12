@@ -14,7 +14,7 @@ use raito::RtPoint3;
 
 pub struct RtParameters {
     // Camera params
-    pub focal_distance: f32,
+    pub camera_fov: f32,
     // Light params
     pub light_intensity: f32,
     pub light_color: Color32,
@@ -28,21 +28,22 @@ impl Default for RtParameters {
     fn default() -> Self {
         Self {
             // Camera params
-            focal_distance: 1.0,
+            camera_fov: 47.0,
             // Light params
             light_intensity: 1.0,
-            light_color: Color32::from_rgb(200, 200, 200),
+            light_color: Color32::from_rgb(50, 50, 50),
             // Sphere params
-            sphere_color: Color32::from_rgb(50, 100, 150),
-            sphere_center: RtPoint3::default(),
-            sphere_radius: 10.0
+            sphere_color: Color32::from_rgb(150, 50, 150),
+            sphere_center: RtPoint3::new(0.0, 0.0, -5.0),
+            sphere_radius: 6.0
         }
     }
 }
 
 fn camera_ui(ui: &mut egui::Ui, params: &mut RtParameters) {
     ui.label("Focal distance");
-    ui.add(egui::Slider::new(&mut params.focal_distance, 10.0..=100.0)
+    // 20~=250mm, 150~=6mm
+    ui.add(egui::Slider::new(&mut params.camera_fov, 10.0..=150.0)
         .drag_value_speed(1.0));
     ui.end_row();
 }
@@ -81,7 +82,7 @@ fn sphere_ui(ui: &mut egui::Ui, params: &mut RtParameters) {
                 .speed(0.1)
                 .min_decimals(1)
                 .max_decimals(5)
-                .clamp_range(-50.0..=0.0)
+                .clamp_range(-50.0..=-50.0)
                 .prefix("z: ")
         );
     });

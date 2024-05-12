@@ -95,6 +95,12 @@ pub struct RtPoint3 {
     pub z: f32
 }
 
+impl RtPoint3 {
+    pub fn new(x: f32, y: f32, z: f32) -> Self {
+        Self { x, y, z }
+    }
+}
+
 impl std::fmt::Display for RtPoint3 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "<RtPoint3 ({}, {}, {})>", self.x, self.y, self.z)
