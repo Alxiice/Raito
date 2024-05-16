@@ -27,10 +27,9 @@ pub struct RtCamera {
 
 impl RtCamera {
     /// Creates a new camera
-    pub fn new(camera_width: u16) -> Self {
-        let aspect_ratio = 1.0;
+    pub fn new(camera_width: u16, aspect_ratio: f32) -> Self {
         Self { 
-            center: RtPoint3::default(),
+            center: RtPoint3::new(0.0, 0.0, 0.0),
             camera_fov: 50.0,
             aspect_ratio,
             camera_width: OnceCell::from(camera_width),

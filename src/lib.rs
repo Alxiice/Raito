@@ -1,4 +1,6 @@
 #![warn(clippy::all, rust_2018_idioms)]
+#![allow(non_snake_case)]
+
 /// =====================================================
 ///                    Raito Render
 /// 

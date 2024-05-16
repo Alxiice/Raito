@@ -36,11 +36,12 @@ impl std::fmt::Display for RtRay {
 /// Holds ray hit info
 pub struct RtHit {
     // Hit infos
-    pub hit: bool
+    pub hit: bool,
+    pub colorOutput: RtRGBA
 }
 
 impl RtHit {
-    pub fn new(hit: bool) -> Self {
-        Self { hit }
+    pub fn new(hit: bool, colorOutput: RtRGBA) -> Self {
+        Self { hit, colorOutput }
     }
 }

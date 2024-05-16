@@ -82,7 +82,7 @@ fn sphere_ui(ui: &mut egui::Ui, params: &mut RtParameters) {
                 .speed(0.1)
                 .min_decimals(1)
                 .max_decimals(5)
-                .clamp_range(-50.0..=-50.0)
+                .clamp_range(-50.0..=50.0)
                 .prefix("z: ")
         );
     });

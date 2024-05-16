@@ -113,8 +113,18 @@ impl RenderScene {
 
     fn RtTraceRay(&mut self, ray: RtRay) -> RtHit {
         let sphere = RtSphere { center: self.sphere_center, radius: self.sphere_radius };
-        let is_intersect = sphere.intersect(ray);
-        RtHit::new(is_intersect)
+        let intersect_point = sphere.intersect(ray);
+        if intersect_point.is_some() {
+            let hitPoint = intersect_point.unwrap();
+            let mut normal = (hitPoint - sphere.center).normalize();
+            // From [-1; 1] to [0; 256]
+            normal.x = 128.0 * (1.0 + normal.x);
+            normal.y = 128.0 * (1.0 + normal.y);
+            normal.z = 128.0 * (1.0 + normal.z);
+            return RtHit::new(true, RtRGBA::new(normal.x as u8, normal.y as u8, normal.z as u8))
+        } else {
+            return RtHit::new(false, RtRGBA::BLACK)
+        }
     }
 
     /// Launch render
@@ -125,15 +135,15 @@ impl RenderScene {
         // 
         // We want to be able to change that, move and rotate the camera
         // We need to implement world and camera space
-    
-        let mut camera = RtCamera::new(self.result.width); // self.result.width
+
+        let mut camera = RtCamera::new(self.result.width, 1.0);
         camera.camera_fov = self.camera_fov;
         let cam_rays = RtCameraRayIterator::new(camera);
         for camera_ray in cam_rays {
             let hit = self.RtTraceRay(camera_ray.ray);
             if hit.hit {
                 self.result.set_pixel_color(
-                    usize::from(camera_ray.x), usize::from(camera_ray.y), self.sphere_color);
+                    usize::from(camera_ray.x), usize::from(camera_ray.y), hit.colorOutput);
             } else {
                 self.result.set_pixel_color(
                     usize::from(camera_ray.x), usize::from(camera_ray.y), self.light_color);

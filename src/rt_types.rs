@@ -13,6 +13,7 @@
 // ========================================
 
 use egui::Color32;
+use log::*;
 
 /// RGBA Color
 #[derive(Copy, Clone)]
@@ -121,14 +122,13 @@ impl std::fmt::Display for RtVec3 {
     }
 }
 
-
 impl std::ops::Sub<RtPoint3> for RtPoint3 {
     type Output = RtVec3;
-    /// Implements Add for RtPoint3 - RtPoint3
+    /// Implements Sub for RtPoint3 - RtPoint3
     /// 
     /// Result is a vector
     fn sub(self, rhs: RtPoint3) -> Self::Output {
-        Self::Output { x: rhs.x - self.x, y: rhs.y - self.y, z: rhs.z - self.z }
+        Self::Output { x: self.x - rhs.x, y: self.y - rhs.y, z: self.z - rhs.z }
     }
 }
 
@@ -144,13 +144,15 @@ impl std::ops::Mul<RtVec3> for f32 {
     type Output = RtVec3;
     /// Implements Mul for f32 * RtVec3
     fn mul(self, rhs: RtVec3) -> Self::Output {
-        Self::Output { x: rhs.x * self, y: rhs.y * self, z: rhs.z * self }
+        Self::Output { x: self * rhs.x, y: self * rhs.y, z: self * rhs.z }
     }
 }
 
+
+// Dot product
 impl std::ops::Mul<RtVec3> for RtVec3 {
     type Output = f32;
-    /// Implements Mul for f32 * RtVec3
+    /// Implements dot product for RtVec3 * RtVec3
     fn mul(self, rhs: RtVec3) -> Self::Output {
         let product = 
             self.x * rhs.x +
@@ -173,7 +175,7 @@ impl std::ops::Add<RtPoint3> for RtVec3 {
     type Output = RtPoint3;
     /// Implements Add for RtVec3 + RtPoint3
     fn add(self, rhs: RtPoint3) -> Self::Output {
-        Self::Output { x: rhs.x + self.x, y: rhs.y + self.y, z: rhs.z + self.z }
+        Self::Output { x: self.x + rhs.x, y: self.y + rhs.y, z: self.z + rhs.z }
     }
 }
 
@@ -181,22 +183,34 @@ impl std::ops::Add<RtVec3> for RtPoint3 {
     type Output = RtPoint3;
     /// Implements Add for RtPoint3 + RtVec3
     fn add(self, rhs: RtVec3) -> Self::Output {
-        Self::Output { x: rhs.x + self.x, y: rhs.y + self.y, z: rhs.z + self.z }
+        Self::Output { x: self.x + rhs.x, y: self.y + rhs.y, z: self.z + rhs.z }
     }
 }
 
 impl RtVec3 {
-    /// Vector norm
-    fn get_norm(&self) -> f32 {
+    /// Vector length
+    pub fn length(self) -> f32 {
         (self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
     }
 
     /// Normalized vector
     pub fn normalize(self) -> Self {
-        self / self.get_norm()
+        self / self.length()
     }
 
     pub fn squared(self) -> f32 {
         self * self
+    }
+
+    pub fn dot(u: Self, v: Self) -> f32 {
+        u * v
+    }
+
+    pub fn cross(u: Self, v: Self) -> Self {
+        Self {
+            x: u.y * v.z - u.z * v.y,
+            y: u.z * v.x - u.x * v.z,
+            z: u.x * v.y - u.y * v.x
+        }
     }
 }
