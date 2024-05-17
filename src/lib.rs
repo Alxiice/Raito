@@ -21,3 +21,5 @@ mod rt_camera;
 pub use rt_camera::*;
 mod rt_geometry;
 pub use rt_geometry::*;
+mod rt_shader_globals;
+pub use rt_shader_globals::*;

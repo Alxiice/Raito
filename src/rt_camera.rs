@@ -10,7 +10,7 @@
 
 use crate::rt_types::*;
 use crate::rt_ray::*;
-use std::alloc;
+use crate::rt_shader_globals::*;
 use std::cell::OnceCell;
 use log::*;
 
@@ -77,26 +77,15 @@ impl RtCamera {
         viewport_point.x += (self.aspect_ratio / *self.camera_width()  as f32) * (x as f32 + 0.5);
         viewport_point.y += (1.0               / *self.camera_height() as f32) * (y as f32 + 0.5);
         let direction = viewport_point - self.center;
+        // Create shader globals
+        let sg = RtShaderGlobals::default(x, y);
         // Create the ray from the center
-        RtRay {
-            origin: self.center,
-            dir: direction.normalize()
-        }
+        let mut ray = RtRay::new(sg, self.center, direction.normalize());
+        ray.bounces = 0;
+        ray
     }
 }
 
-/// Holds ray and 
-pub struct RtCameraRay {
-    pub ray: RtRay,
-    pub x: u16,
-    pub y: u16
-}
-
-impl RtCameraRay {
-    pub fn new(ray: RtRay, x: u16, y: u16) -> Self {
-        Self{ ray, x, y }
-    }
-}
 
 /// Could be reimplemented as trait to iterate in 
 /// - buckets
@@ -109,7 +98,7 @@ pub struct RtCameraRayIterator {
     /// Row position
     current_y: u16,
     // Camera
-    camera: RtCamera
+    camera: RtCamera,
 }
 
 impl RtCameraRayIterator {
@@ -119,23 +108,19 @@ impl RtCameraRayIterator {
             stop: false,
             current_x: 0,
             current_y: 0,
-            camera
+            camera,
         }
     }
 }
 
 impl Iterator for RtCameraRayIterator {
-    type Item = RtCameraRay;
+    type Item = RtRay;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.stop {
             return None
         }
-        let camera_ray = Self::Item {
-            ray: self.camera.get_camera_ray(self.current_x, self.current_y),
-            x: self.current_x,
-            y: self.current_y
-        };
+        let camera_ray = self.camera.get_camera_ray(self.current_x, self.current_y);
 
         // Compute next pixel position
         if self.current_x >= self.camera.camera_width() - 1 {

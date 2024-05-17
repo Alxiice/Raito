@@ -30,12 +30,12 @@ pub struct RtSphere {
 
 pub trait RtIntersect {
     /// Compute intersection with ray and geometry element
-    fn intersect(&self, ray: RtRay) -> Option<RtPoint3>;
+    fn intersect(&self, ray: &RtRay) -> Option<RtPoint3>;
 }
 
 impl RtIntersect for RtSphere {
     /// Compute intersection with ray and sphere
-    fn intersect(&self, ray: RtRay) -> Option<RtPoint3> {
+    fn intersect(&self, ray: &RtRay) -> Option<RtPoint3> {
         let a = RtVec3::dot(ray.dir, ray.dir);
         let b = 2.0 * RtVec3::dot(ray.dir, ray.origin - self.center);
         let c = (ray.origin - self.center).squared() - self.radius * self.radius;
@@ -47,9 +47,9 @@ impl RtIntersect for RtSphere {
         let sqrt_delta = delta.sqrt();
         let x1 = (-b + sqrt_delta) / (2.0 * a);
         let x2 = (-b - sqrt_delta) / (2.0 * a);
-        if x1 > 0.0 && x1 < x2 {
+        if x1 >= 0.0 && (x2 < 0.0 || x1 <= x2) {
             return Some(ray.origin + x1 * ray.dir)
-        } else if x2 > 0.0 {
+        } else if x2 >= 0.0 {
             return Some(ray.origin + x2 * ray.dir)
         }
         None

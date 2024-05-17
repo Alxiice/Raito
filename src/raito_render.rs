@@ -111,7 +111,7 @@ impl RenderScene {
         self.sphere_radius = sphere_radius;
     }
 
-    fn RtTraceRay(&mut self, ray: RtRay) -> RtHit {
+    fn RtTraceRay(&mut self, ray: &RtRay) -> RtHit {
         let sphere = RtSphere { center: self.sphere_center, radius: self.sphere_radius };
         let intersect_point = sphere.intersect(ray);
         if intersect_point.is_some() {
@@ -140,13 +140,14 @@ impl RenderScene {
         camera.camera_fov = self.camera_fov;
         let cam_rays = RtCameraRayIterator::new(camera);
         for camera_ray in cam_rays {
-            let hit = self.RtTraceRay(camera_ray.ray);
+            let ray = &camera_ray;  // Reference to the camera ray
+            let hit = self.RtTraceRay(ray);
             if hit.hit {
                 self.result.set_pixel_color(
-                    usize::from(camera_ray.x), usize::from(camera_ray.y), hit.colorOutput);
+                    usize::from(ray.x), usize::from(ray.y), hit.colorOutput);
             } else {
                 self.result.set_pixel_color(
-                    usize::from(camera_ray.x), usize::from(camera_ray.y), self.light_color);
+                    usize::from(ray.x), usize::from(ray.y), self.light_color);
             }
         }
     }
