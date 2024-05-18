@@ -1,0 +1,17 @@
+site_name: Raito
+theme:
+  name: material
+  palette:
+    scheme: slate
+    primary: custom
+extra_css:
+  - stylesheets/extra.css
+extra_javascript:
+  - javascripts/extra.js
+markdown_extensions:
+  - attr_list
+  - md_in_html
+  - pymdownx.tasklist:
+      custom_checkbox: true
+plugins:
+  - glightbox
