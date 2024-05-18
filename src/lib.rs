@@ -11,8 +11,8 @@
 ///   Defines render engine library 
 /// =====================================================
 
-mod raito_render;
-pub use raito_render::*;
+mod rt_render;
+pub use rt_render::*;
 mod rt_types;
 pub use rt_types::*;
 mod rt_ray;
