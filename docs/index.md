@@ -1,4 +1,4 @@
-# Raito Render
+# Introduction
 
 
 ## Why another rendering engine ?
@@ -17,7 +17,9 @@ Also, I dropped Rust after the engineering school, so I wanted to get back to it
 
 ## Description
 
-Note : For now there is not much implemented as this is the start of the project
+!!! note
+
+    For now there is not much implemented as this is the start of the project
 
 The goal for a final product is to have :
 
@@ -33,7 +35,9 @@ The goal for a final product is to have :
 
 ## Roadmap
 
-Note : The roadmap is not compelted yet. For now we only have first 2 pre-releases of the project.
+!!! note
+    
+    The roadmap is not compelted yet. For now we only have first 2 pre-releases of the project.
 
 
 **Release 0.0.0**

@@ -13,5 +13,10 @@ markdown_extensions:
   - md_in_html
   - pymdownx.tasklist:
       custom_checkbox: true
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+
 plugins:
   - glightbox
+  - search
