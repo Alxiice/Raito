@@ -1,4 +1,13 @@
 site_name: Raito
+docs_dir: './source'
+
+# Pages
+use_directory_urls: false
+nav:
+  - Introduction: 'index.md'
+  - Code documentation: '../rust/doc/raito/index.html'
+
+# Setup
 theme:
   name: material
   palette:
@@ -16,7 +25,6 @@ markdown_extensions:
   - admonition
   - pymdownx.details
   - pymdownx.superfences
-
 plugins:
   - glightbox
   - search

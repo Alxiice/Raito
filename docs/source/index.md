@@ -28,7 +28,7 @@ The goal for a final product is to have :
 - Widgets that enables the user to edit the current scene (move lights, etc)
 
 <figure markdown="span">
-  ![Raito Renderview](images/raito_render_view.png)
+  ![Raito Renderview](../images/raito_render_view.png)
   <figcaption>This is the Raito RenderView</figcaption>
 </figure>
 
