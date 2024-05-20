@@ -13,6 +13,7 @@ use crate::rt_types::*;
 use crate::rt_camera::*;
 use crate::rt_ray::*;
 use crate::rt_geometry::*;
+use crate::rt_shader_globals::*;
 use egui::Color32;
 use log::*;
 
@@ -112,17 +113,23 @@ impl RenderScene {
     }
 
     fn RtTraceRay(&mut self, ray: &RtRay) -> Option<RtHit> {
+        // Define shader
+        // let shader = NormalShader{};
+        let shader = StaticColorShader{
+            color: self.sphere_color
+        };
+
+        // Compute intersections
         let sphere = RtSphere { center: self.sphere_center, radius: self.sphere_radius };
-        let intersect_point = sphere.intersect(ray);
+        let intersect_point: Option<RtShaderGlobals> = sphere.intersect(ray);
+
+        // Execute shader
         if intersect_point.is_some() {
-            let hitPoint = intersect_point.unwrap();
-            let mut normal = (hitPoint - sphere.center).normalize();
-            // From [-1; 1] to [0; 256]
-            normal.x = 128.0 * (1.0 + normal.x);
-            normal.y = 128.0 * (1.0 + normal.y);
-            normal.z = 128.0 * (1.0 + normal.z);
+            let mut hit: RtShaderGlobals = intersect_point.unwrap();
+            // Compute normal
+            hit.N = (hit.P - sphere.center).normalize();
             return Some(
-                RtHit::new(true, RtRGBA::new(normal.x as u8, normal.y as u8, normal.z as u8))
+                RtHit::new(true, shader.evaluate(&hit))
             );
         }
         None

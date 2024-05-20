@@ -13,9 +13,19 @@ use log::info;
 
 use crate::rt_types::*;
 use crate::rt_ray::*;
+use crate::rt_shader_globals::*;
 
 // ========================================
-//  Geometry
+//  Traits
+// ========================================
+
+pub trait Intersect {
+    fn intersect(&self, ray: &RtRay) -> Option<RtShaderGlobals>;
+}
+
+
+// ========================================
+//  Geometries
 // ========================================
 
 pub struct RtSphere {
@@ -23,19 +33,46 @@ pub struct RtSphere {
     pub radius: f32
 }
 
+impl RtSphere {
+    const rt_type: &'static str = "<RtGeometry : Sphere>";
+}
+
+
+// ========================================
+//  Lights
+// ========================================
+
+/// Skydome light
+pub struct RtSkydomeLight {
+    pub color: RtRGBA,
+    pub intensity: f32
+}
+
+impl RtSkydomeLight {
+    const rt_type: &'static str = "<RtLight : Skydome>";
+}
+
+
+/// Point light
+pub struct RtPointLight {
+    pub color: RtRGBA,
+    pub intensity: f32,
+    pub center: RtPoint3,
+    pub radius: f32
+}
+
+impl RtPointLight {
+    const rt_type: &'static str = "<RtLight : Point>";
+}
+
 
 // ========================================
 //  Intersections
 // ========================================
 
-pub trait RtIntersect {
-    /// Compute intersection with ray and geometry element
-    fn intersect(&self, ray: &RtRay) -> Option<RtPoint3>;
-}
-
-impl RtIntersect for RtSphere {
+impl Intersect for RtSphere {
     /// Compute intersection with ray and sphere
-    fn intersect(&self, ray: &RtRay) -> Option<RtPoint3> {
+    fn intersect(&self, ray: &RtRay) -> Option<RtShaderGlobals> {
         let a = RtVec3::dot(ray.dir, ray.dir);
         let b = 2.0 * RtVec3::dot(ray.dir, ray.origin - self.center);
         let c = (ray.origin - self.center).squared() - self.radius * self.radius;
@@ -48,10 +85,32 @@ impl RtIntersect for RtSphere {
         let x1 = (-b + sqrt_delta) / (2.0 * a);
         let x2 = (-b - sqrt_delta) / (2.0 * a);
         if x1 >= 0.0 && (x2 < 0.0 || x1 <= x2) {
-            return Some(ray.origin + x1 * ray.dir)
+            return Some(RtShaderGlobals::from_intersection(ray, ray.origin + x1 * ray.dir))
         } else if x2 >= 0.0 {
-            return Some(ray.origin + x2 * ray.dir)
+            return Some(RtShaderGlobals::from_intersection(ray, ray.origin + x2 * ray.dir))
         }
         None
     }
+}
+
+
+// ========================================
+//  Objects
+// ========================================
+
+/// Defines all geometry types
+enum RtGeometry {
+    Sphere(RtSphere)
+}
+
+/// Defines all light types
+enum RtLight {
+    Skydome(RtSkydomeLight),
+    Point(RtPointLight)
+}
+
+/// Defines all object types
+enum RtObject {
+    Geometry(RtGeometry),
+    Light(RtLight)
 }

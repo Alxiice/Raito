@@ -35,7 +35,7 @@ impl Default for RtParameters {
             // Sphere params
             sphere_color: Color32::from_rgb(150, 50, 150),
             sphere_center: RtPoint3::new(0.0, 0.0, -5.0),
-            sphere_radius: 6.0
+            sphere_radius: 1.0
         }
     }
 }
