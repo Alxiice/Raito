@@ -4,9 +4,6 @@
 /// =====================================================
 ///                    Raito Render
 /// 
-/// Module authors : 
-/// - Alice Sonolet <alice.sonolet@gmail.com>
-/// 
 /// Module description :
 ///   Defines render engine library 
 /// =====================================================
@@ -19,7 +16,11 @@ mod rt_ray;
 pub use rt_ray::*;
 mod rt_camera;
 pub use rt_camera::*;
-mod rt_geometry;
-pub use rt_geometry::*;
+// mod rt_geometry;
+// pub use rt_geometry::*;
 mod rt_shader_globals;
 pub use rt_shader_globals::*;
+
+// Object module
+pub mod rt_objects;
+pub mod rt_shaders;

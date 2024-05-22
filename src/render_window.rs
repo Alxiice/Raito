@@ -1,9 +1,6 @@
 /// =====================================================
 ///                    Raito Render
 /// 
-/// Module authors : 
-/// - Alice Sonolet <alice.sonolet@gmail.com>
-/// 
 /// Module description :
 ///   Opens a render window to load a scene and launch a 
 ///   render.
@@ -22,7 +19,7 @@ pub struct RaitoRenderApp {
     // Parameters
     parameters: RtParameters,
     // Render Scene
-    scene: RenderScene,
+    scene: RenderScene<'static>,
     // Displayed image
     color_image: ColorImage,
 }

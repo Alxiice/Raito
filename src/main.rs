@@ -6,9 +6,6 @@
 /// =====================================================
 ///                    Raito Render
 /// 
-/// Module authors : 
-/// - Alice Sonolet <alice.sonolet@gmail.com>
-/// 
 /// Module description :
 ///   Defines executable that will launch a render
 ///   window. 

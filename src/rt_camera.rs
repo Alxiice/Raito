@@ -1,9 +1,6 @@
 /// =====================================================
 ///                    Raito Render
 /// 
-/// Module authors : 
-/// - Alice Sonolet <alice.sonolet@gmail.com>
-/// 
 /// Module description :
 ///   Defines a camera
 /// =====================================================

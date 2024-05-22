@@ -1,21 +1,27 @@
 /// =====================================================
 ///                    Raito Render
 /// 
-/// Module authors : 
-/// - Alice Sonolet <alice.sonolet@gmail.com>
-/// 
 /// Module description :
 ///   Defines render scene and methods to launch render.
 /// =====================================================
+
+use egui::Color32;
+use std::marker::PhantomData;
+use log::*;
 
 // use crate::{RtCamera, RtPoint3, RtRGBA};
 use crate::rt_types::*;
 use crate::rt_camera::*;
 use crate::rt_ray::*;
-use crate::rt_geometry::*;
 use crate::rt_shader_globals::*;
-use egui::Color32;
-use log::*;
+use crate::rt_objects::*;
+use crate::rt_objects::rt_object_base::*;
+use crate::rt_shaders::*;
+
+use self::staticColor::StaticColorShader;
+use self::stateVector::StateVectorShader;
+use self::rt_geometries::RtSphere;
+
 
 pub struct RenderResult {
     width: u16,
@@ -57,7 +63,7 @@ impl RenderResult {
     }
 }
 
-pub struct RenderScene {
+pub struct RenderScene<'a> {
     // Camera params
     pub camera_fov: f32,
     // Light params
@@ -69,10 +75,13 @@ pub struct RenderScene {
     pub sphere_radius: f32,
 
     /// Stores result
-    pub result: RenderResult
+    pub result: RenderResult,
+
+    // To use lifetime
+    _marker: PhantomData<&'a ()>,
 }
 
-impl Default for RenderScene {
+impl<'a> Default for RenderScene<'a> {
     fn default() -> Self {
         Self {
             // Camera params
@@ -86,12 +95,14 @@ impl Default for RenderScene {
             sphere_radius: 0.0,
 
             // Result
-            result: RenderResult::new()
+            result: RenderResult::new(),
+
+            _marker: Default::default()
         }
     }
 }
 
-impl RenderScene {
+impl<'a> RenderScene<'a> {
     /// Update scene parameters
     pub fn setup_scene(&mut self, 
         camera_fov: f32, 
@@ -112,24 +123,34 @@ impl RenderScene {
         self.sphere_radius = sphere_radius;
     }
 
-    fn RtTraceRay(&mut self, ray: &RtRay) -> Option<RtHit> {
-        // Define shader
-        // let shader = NormalShader{};
-        let shader = StaticColorShader{
-            color: self.sphere_color
+    // TODO : from one to multiple objects
+    pub fn get_scene_geometry(&self) -> Box<dyn RtObject<'static>> {
+        let shader = StateVectorShader { output: "N".to_string() };
+        // let shader = StaticColorShader { color: self.sphere_color };
+        // Define geometry
+        let sphere = RtSphere {
+            object_params: ObjectParams {
+                name: "sphere".to_string(),
+                shader: Box::new(shader)
+            },
+            center: self.sphere_center,
+            radius: self.sphere_radius
         };
 
+        Box::new(sphere)
+    }
+
+    fn RtTraceRay(&mut self, ray: &RtRay) -> Option<RtHit> {
+        let object = self.get_scene_geometry();
+        // TODO : from one to multiple objects
+
         // Compute intersections
-        let sphere = RtSphere { center: self.sphere_center, radius: self.sphere_radius };
-        let intersect_point: Option<RtShaderGlobals> = sphere.intersect(ray);
+        let hit: Option<RtShaderGlobals> = object.intersect(ray);
 
         // Execute shader
-        if intersect_point.is_some() {
-            let mut hit: RtShaderGlobals = intersect_point.unwrap();
-            // Compute normal
-            hit.N = (hit.P - sphere.center).normalize();
+        if hit.is_some() {
             return Some(
-                RtHit::new(true, shader.evaluate(&hit))
+                RtHit::new(true, object.get_shader().evaluate(&hit.unwrap()))
             );
         }
         None
