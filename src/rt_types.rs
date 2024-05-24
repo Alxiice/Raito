@@ -10,7 +10,7 @@
 // ========================================
 
 use egui::Color32;
-use log::*;
+
 
 /// RGBA Color
 #[derive(Copy, Clone)]

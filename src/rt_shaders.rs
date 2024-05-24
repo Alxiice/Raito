@@ -2,16 +2,15 @@
 ///                    Raito Render
 /// 
 /// Module description :
-///   Defines shaders
+///   Defines shaders module
 /// =====================================================
 
 pub mod rt_shader_base;
 pub mod staticColor;
 pub mod stateVector;
 
-use rt_shader_base::*;
-use staticColor::*;
-use stateVector::*;
+use staticColor::StaticColorShader;
+use stateVector::StateVectorShader;
 
 pub enum RtShadersTypes {
     StaticColor(StaticColorShader),

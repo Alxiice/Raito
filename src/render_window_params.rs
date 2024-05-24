@@ -6,9 +6,9 @@
 /// =====================================================
 
 use egui::*;
-use log::*;
 use raito::RtPoint3;
 
+/// Render parameters in the UI
 pub struct RtParameters {
     // Camera params
     pub camera_fov: f32,
@@ -22,6 +22,7 @@ pub struct RtParameters {
 }
 
 impl Default for RtParameters {
+    /// Setup the parameters UI to default value
     fn default() -> Self {
         Self {
             // Camera params

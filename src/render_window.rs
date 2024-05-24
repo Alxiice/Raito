@@ -7,28 +7,38 @@
 /// =====================================================
 
 use egui::*;
-use raito::*;
+// use raito::*;
 use log::*;
+
 use crate::render_window_params::*;
+
+use raito::rt_types::*;
+use raito::rt_scene::RtScene;
+use raito::rt_render_scene::{RenderResult, RtRenderScene};
+
 
 const WIDTH : usize = 400;
 const HEIGHT: usize = 400;
 const DEFAULT_COLOR: Color32 = Color32::from_rgb(0, 0, 0);
 
+/// Create app structure
 pub struct RaitoRenderApp {
     // Parameters
     parameters: RtParameters,
     // Render Scene
-    scene: RenderScene<'static>,
+    scene: RtScene<'static>,
+    result: RenderResult,
     // Displayed image
     color_image: ColorImage,
 }
 
 impl Default for RaitoRenderApp {
+    /// Init app values to default
     fn default() -> Self {
         Self {
             parameters: RtParameters::default(),
-            scene: RenderScene::default(),
+            scene: RtScene::default(),
+            result: RenderResult::new(),
             color_image: ColorImage::new([WIDTH, HEIGHT], DEFAULT_COLOR),
         }
     }
@@ -42,14 +52,16 @@ impl RaitoRenderApp {
         Default::default()
     }
 
+    /// Update the current image cache
     fn update_image(&mut self) {
         for y in 0..HEIGHT {
             for x in 0..WIDTH {
-                self.color_image[(x, y)] = self.scene.result.get_pixel_color(x, y);
+                self.color_image[(x, y)] = self.result.get_pixel_color(x, y);
             }
         }
     }
 
+    /// Start the render
     pub fn start_render(&mut self) {
         info!("> Start render");
         
@@ -64,20 +76,20 @@ impl RaitoRenderApp {
             self.parameters.sphere_radius);
 
         // Launch render
-        self.scene.render();
+        RtRenderScene(&mut self.scene, &mut self.result);
         info!("> Render finished");
 
         self.update_image();
-
     }
 
+    /// Stops the render
     pub fn stop_render(&mut self, ctx: &egui::Context) {
         // TODO : When IPR is implemented, stops the IPR
         info!("> Closes Raito RenderView");
         ctx.send_viewport_cmd(egui::ViewportCommand::Close);
     }
-
 }
+
 
 impl eframe::App for RaitoRenderApp {
     fn clear_color(&self, _visuals: &egui::Visuals) -> [f32; 4] {

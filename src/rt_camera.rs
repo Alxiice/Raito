@@ -9,7 +9,6 @@ use crate::rt_types::*;
 use crate::rt_ray::*;
 use crate::rt_shader_globals::*;
 use std::cell::OnceCell;
-use log::*;
 
 /// Describes a camera
 /// 

@@ -9,7 +9,6 @@ pub mod rt_object_base;
 pub mod rt_geometries;
 pub mod rt_lights;
 
-use rt_object_base::*;
 use rt_geometries::*;
 use rt_lights::*;
 

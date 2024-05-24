@@ -5,6 +5,8 @@
 ///   Defines a Ray
 /// =====================================================
 
+// TODO : could be moved in rt_types
+
 use crate::rt_types::*;
 use crate::rt_shader_globals::*;
 

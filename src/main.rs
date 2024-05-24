@@ -11,9 +11,9 @@
 ///   window. 
 /// =====================================================
 
+mod render_window_params;
 mod render_window;
 pub use render_window::RaitoRenderApp;
-mod render_window_params;
 use log::info;
 use clap::{Parser, ValueEnum};
 
