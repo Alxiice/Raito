@@ -8,6 +8,7 @@
 use crate::rt_shaders::rt_shader_base::*;
 use crate::rt_shader_globals::*;
 use crate::rt_types::*;
+use crate::rt_scene::*;
 
 
 // ========================================
@@ -24,7 +25,7 @@ pub struct StaticColorShader {
 // ========================================
 
 impl RtShader for StaticColorShader {
-    fn evaluate(&self, sg: &RtShaderGlobals) -> RtRGBA {
+    fn evaluate(&self, scene: &RtScene, sg: &RtShaderGlobals) -> RtRGBA {
         self.color
     }
 }

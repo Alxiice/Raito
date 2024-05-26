@@ -31,7 +31,7 @@ pub struct RtRay {
 
 impl RtRay {
     /// Create ray
-    pub fn new(sg: RtShaderGlobals, origin: RtPoint3, dir: RtVec3) -> Self {
+    pub fn new(sg: &RtShaderGlobals, origin: RtPoint3, dir: RtVec3) -> Self {
         Self {
             origin,
             dir,
@@ -61,11 +61,12 @@ impl std::fmt::Display for RtRay {
 pub struct RtHit {
     // Hit infos
     pub hit: bool,
-    pub colorOutput: RtRGBA
+    pub colorOutput: RtRGBA,
+    pub P: RtPoint3
 }
 
 impl RtHit {
-    pub fn new(hit: bool, colorOutput: RtRGBA) -> Self {
-        Self { hit, colorOutput }
+    pub fn new(hit: bool, colorOutput: RtRGBA, P: RtPoint3) -> Self {
+        Self { hit, colorOutput, P }
     }
 }

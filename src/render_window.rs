@@ -26,7 +26,7 @@ pub struct RaitoRenderApp {
     // Parameters
     parameters: RtParameters,
     // Render Scene
-    scene: RtScene<'static>,
+    scene: RtScene,
     result: RenderResult,
     // Displayed image
     color_image: ColorImage,
@@ -66,19 +66,23 @@ impl RaitoRenderApp {
         info!("> Start render");
         
         // Setup scene
-        info!("> Update render scene");
-        self.scene.setup_scene(
+        info!("> Setup render scene");
+        self.scene = RtScene::new(
             self.parameters.camera_fov,
-            self.parameters.light_intensity,
-            RtRGBA::from_color32(self.parameters.light_color),
             RtRGBA::from_color32(self.parameters.sphere_color),
             self.parameters.sphere_center,
-            self.parameters.sphere_radius);
+            self.parameters.sphere_radius,
+            self.parameters.light_position,
+            self.parameters.light_radius,
+            RtRGBA::from_color32(self.parameters.light_color),
+            self.parameters.light_intensity
+        );
 
         // Launch render
         RtRenderScene(&mut self.scene, &mut self.result);
         info!("> Render finished");
 
+        // Update display image
         self.update_image();
     }
 
@@ -102,7 +106,6 @@ impl eframe::App for RaitoRenderApp {
         custom_window_frame(ctx, "Raito RenderView", |ui| {
             ui.horizontal(|ui| {
                 ui.vertical(|ui| {
-                    // ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
                     ui.horizontal(|ui| {
                         let available_size = [(WIDTH as f32) / 2.0 - 4.0, 25.0];
                         let start_button = Button::new("Start Render");
@@ -114,15 +117,6 @@ impl eframe::App for RaitoRenderApp {
                             self.stop_render(ctx);
                         };
                     });
-                    // ui.horizontal(|ui| {
-                    //     if ui.button("Start render").clicked() {
-                    //         self.start_render();
-                    //     };
-                    //     ui.separator();
-                    //     if ui.button("Stop render").clicked() {
-                    //         self.stop_render();
-                    //     };
-                    // });
 
                     // Render view
                     let img = ui.ctx().load_texture(
@@ -132,10 +126,15 @@ impl eframe::App for RaitoRenderApp {
                     );
                     ui.add(egui::Image::new(&img));
                 });
+
                 // Parameters
+                let mut updated = false;
                 ui.vertical(|ui| {
-                    setup_params_ui(ui, &mut self.parameters);
+                    setup_params_ui(ui, &mut self.parameters, &mut updated);
                 });
+                if updated {
+                    self.start_render();
+                } 
             });
         })
     }

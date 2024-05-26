@@ -21,6 +21,19 @@ pub struct RtRGBA {
     pub a: u8
 }
 
+impl std::ops::Mul<f32> for RtRGBA {
+    type Output = Self;
+    /// Implements Mul for RtRGBA * f32
+    fn mul(self, rhs: f32) -> Self::Output {
+        Self::Output { 
+            r: (self.r as f32 * rhs) as u8, 
+            g: (self.g as f32 * rhs) as u8, 
+            b: (self.b as f32 * rhs) as u8,
+            a: self.a  // That's a choice ?
+        }
+    }
+}
+
 impl Default for RtRGBA {
     fn default() -> Self {
         Self {
@@ -78,6 +91,7 @@ impl RtRGBA {
     pub const RED  : Self = Self::from_rgb(255, 0, 0);
     pub const GREEN: Self = Self::from_rgb(0, 255, 0);
     pub const BLUE : Self = Self::from_rgb(0, 0, 255);
+    pub const ERRCOLOR : Self = Self::from_rgb(230, 50, 150);
 }
 
 

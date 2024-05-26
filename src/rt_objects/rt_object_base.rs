@@ -13,14 +13,14 @@ use crate::rt_shaders::*;
 use self::rt_shader_base::RtShader;
 
 
-pub struct ObjectParams<'a> {
+pub struct ObjectParams {
     pub name: String,
-    pub shader: Box<dyn RtShader + 'a>
+    pub shader: Box<dyn RtShader>
 }
 
-pub trait RtObject<'a> {
+pub trait RtObject {
     /// Get object parameters
-    fn getObjectParams(&self) -> &ObjectParams<'a>;
+    fn getObjectParams(&self) -> &ObjectParams;
     
     /// Get object name
     fn get_name(&self) -> String {
@@ -28,7 +28,7 @@ pub trait RtObject<'a> {
     }
 
     /// Get shader attached to the object
-    fn get_shader(&self) -> &Box<dyn RtShader + 'a> {
+    fn get_shader(&self) -> &Box<dyn RtShader> {
         &self.getObjectParams().shader
     }
     

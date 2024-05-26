@@ -76,7 +76,7 @@ impl RtCamera {
         // Create shader globals
         let sg = RtShaderGlobals::default(x, y);
         // Create the ray from the center
-        let mut ray = RtRay::new(sg, self.center, direction.normalize());
+        let mut ray = RtRay::new(&sg, self.center, direction.normalize());
         ray.bounces = 0;
         ray
     }

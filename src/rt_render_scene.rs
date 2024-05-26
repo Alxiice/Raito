@@ -59,7 +59,7 @@ impl RenderResult {
 
 
 /// Launch render on scene
-pub fn RtRenderScene(scene: &mut RtScene<'_>, result: &mut RenderResult) {
+pub fn RtRenderScene(scene: &mut RtScene, result: &mut RenderResult) {
     // TODO : for now the camera
     // - center is at 0
     // - direction is towards the -y direction
@@ -79,7 +79,7 @@ pub fn RtRenderScene(scene: &mut RtScene<'_>, result: &mut RenderResult) {
                 usize::from(ray.x), usize::from(ray.y), hitResult.colorOutput);
         } else {
             result.set_pixel_color(
-                usize::from(ray.x), usize::from(ray.y), scene.light_color);
+                usize::from(ray.x), usize::from(ray.y), RtRGBA::ERRCOLOR);
         }
     }
 }

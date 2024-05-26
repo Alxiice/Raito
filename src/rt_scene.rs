@@ -5,89 +5,89 @@
 ///   Defines a render scene 
 /// =====================================================
 
-use std::marker::PhantomData;
-
 use crate::rt_types::*;
-use crate::rt_camera::*;
 use crate::rt_objects::*;
 use crate::rt_objects::rt_object_base::*;
 use crate::rt_shaders::*;
 
-use self::staticColor::StaticColorShader;
-use self::stateVector::StateVectorShader;
+use self::lambert::LambertShader;
+use self::lightShader::LightShader;
+use self::rt_lights::RtPointLight;
 use self::rt_geometries::RtSphere;
 
 
 /// Describes a render scene
-pub struct RtScene<'a> {
+pub struct RtScene {
     // Camera params
     pub camera_fov: f32,
-    // Light params
-    pub light_intensity: f32,
-    pub light_color: RtRGBA,
     // Sphere params
-    pub sphere_color: RtRGBA,
-    pub sphere_center: RtPoint3,
-    pub sphere_radius: f32,
-
-    // To use lifetime
-    _marker: PhantomData<&'a ()>,
+    pub sphere: RtSphere,
+    // Light params
+    pub light: RtPointLight,
 }
 
-impl<'a> Default for RtScene<'a> {
+impl Default for RtScene {
     fn default() -> Self {
         Self {
             // Camera params
             camera_fov: 1.0,
-            // Light params
-            light_intensity: 1.0,
-            light_color: RtRGBA::default(),
             // Sphere params
-            sphere_color: RtRGBA::default(),
-            sphere_center: RtPoint3::default(),
-            sphere_radius: 0.0,
-
-            _marker: Default::default()
+            sphere: RtSphere { 
+                object_params: ObjectParams { name: String::default(), shader: Box::new(DEFAULT_SHADER) },
+                center: RtPoint3::default(),
+                radius: 1.0
+            },
+            // Light params
+            light: RtPointLight {
+                object_params: ObjectParams { name: String::default(), shader: Box::new(DEFAULT_LIGHT) },
+                center: RtPoint3::default(),
+                radius: 1.0
+            }
         }
     }
 }
 
-impl<'a> RtScene<'a> {
+impl RtScene {
     /// Update scene parameters
-    pub fn setup_scene(&mut self, 
-        camera_fov: f32, 
-        light_intensity: f32, 
-        light_color: RtRGBA,
-        sphere_color: RtRGBA,
-        sphere_center: RtPoint3,
-        sphere_radius: f32)
+    pub fn new(camera_fov: f32, 
+               sphere_color: RtRGBA,
+               sphere_center: RtPoint3,
+               sphere_radius: f32,
+               light_center: RtPoint3,
+               light_radius: f32,
+               light_color: RtRGBA,
+               light_intensity: f32) -> Self
     {
-        // Camera params
-        self.camera_fov = camera_fov;
-        // Light params
-        self.light_intensity = light_intensity;
-        self.light_color     = light_color;
-        // Sphere params
-        self.sphere_color  = sphere_color;
-        self.sphere_center = sphere_center;
-        self.sphere_radius = sphere_radius;
+        Self {
+            camera_fov,
+            sphere: RtSphere {
+                object_params: ObjectParams {
+                    name: String::from("sphere"), 
+                    shader: Box::new(LambertShader{ color: sphere_color })
+                },
+                center: sphere_center,
+                radius: sphere_radius
+            },
+            light: RtPointLight {
+                object_params: ObjectParams {
+                    name: String::from("light"),
+                    shader: Box::new(LightShader { 
+                        color: light_color, intensity: light_intensity 
+                    })
+                },
+                center: light_center,
+                radius: light_radius
+            }
+        }
     }
 
     // TODO : from one to multiple objects
     /// Iterate on the scene objects
-    pub fn get_scene_geometry(&self) -> Box<dyn RtObject<'static>> {
-        let shader = StateVectorShader { output: "N".to_string() };
-        // let shader = StaticColorShader { color: self.sphere_color };
-        // Define geometry
-        let sphere = RtSphere {
-            object_params: ObjectParams {
-                name: "sphere".to_string(),
-                shader: Box::new(shader)
-            },
-            center: self.sphere_center,
-            radius: self.sphere_radius
-        };
+    pub fn get_scene_geometry(&self) -> Box<& dyn RtObject> {
+        Box::new(&self.sphere)
+    }
 
-        Box::new(sphere)
+    pub fn get_scene_light(&self) -> Box<& dyn RtObject> {
+        Box::new(&self.light)
     }
 }

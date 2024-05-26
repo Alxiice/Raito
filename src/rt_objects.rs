@@ -14,8 +14,8 @@ use rt_lights::*;
 
 
 /// Defines object types
-pub enum RtObjectTypes<'a> {
+pub enum RtObjectTypes {
     RtNull(bool),
-    Geometry(RtGeometryTypes<'a>),
+    Geometry(RtGeometryTypes),
     Light(RtLightTypes)
 }

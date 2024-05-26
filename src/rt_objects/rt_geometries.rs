@@ -15,19 +15,19 @@ use crate::rt_objects::rt_object_base::*;
 //  Define objects
 // ========================================
 
-pub struct RtSphere<'a> {
-    pub object_params: ObjectParams<'a>,
+pub struct RtSphere {
+    pub object_params: ObjectParams,
     pub center: RtPoint3,
     pub radius: f32
 }
 
-impl<'a> RtSphere<'a> {
-    const rt_type: &'static str = "<RtGeometry : Sphere>";
+impl RtSphere {
+    const RT_TYPE: &'static str = "<RtGeometry : Sphere>";
 }
 
 /// Define geometry types
-pub enum RtGeometryTypes<'a> {
-    Sphere(RtSphere<'a>)
+pub enum RtGeometryTypes {
+    Sphere(RtSphere)
 }
 
 
@@ -35,8 +35,8 @@ pub enum RtGeometryTypes<'a> {
 //  Implement object traits
 // ========================================
 
-impl<'a> RtObject<'a> for RtSphere<'a> {
-    fn getObjectParams(&self) -> &ObjectParams<'a> {
+impl RtObject for RtSphere {
+    fn getObjectParams(&self) -> &ObjectParams {
         &self.object_params
     }
     

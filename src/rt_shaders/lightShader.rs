@@ -15,8 +15,9 @@ use crate::rt_scene::*;
 //  Shader structure
 // ========================================
 
-pub struct StateVectorShader {
-    pub output: String
+pub struct LightShader {
+    pub color: RtRGBA,
+    pub intensity: f32
 }
 
 
@@ -24,20 +25,8 @@ pub struct StateVectorShader {
 //  Shader implementation
 // ========================================
 
-impl RtShader for StateVectorShader {
+impl RtShader for LightShader {
     fn evaluate(&self, scene: &RtScene, sg: &RtShaderGlobals) -> RtRGBA {
-        // TODO : Switch depending on the value of self.output
-        // - N : sg.N
-        // - P : sg.P
-        // ...
-
-        // N
-        let mut normal = RtRGBA::default();
-        // From [-1; 1] to [0; 256]
-        normal.r = (128.0 * (1.0 + sg.N.x)) as u8;
-        normal.g = (128.0 * (1.0 + sg.N.y)) as u8;
-        normal.b = (128.0 * (1.0 + sg.N.z)) as u8;
-
-        normal
+        self.color * self.intensity
     }
 }
