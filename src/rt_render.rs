@@ -8,10 +8,11 @@
 use crate::rt_ray::*;
 use crate::rt_shader_globals::*;
 use crate::rt_scene::*;
+use crate::RtVec3;
 
 
 /// Launch a ray on a scene
-pub fn RtTraceRay<'a>(scene: &mut RtScene, ray: &RtRay) -> Option<RtHit> {
+pub fn RtTraceRay(scene: &mut RtScene, ray: &RtRay) -> Option<RtHit> {
     let object = scene.get_scene_geometry();
     // TODO : from one to multiple objects
 
@@ -29,7 +30,7 @@ pub fn RtTraceRay<'a>(scene: &mut RtScene, ray: &RtRay) -> Option<RtHit> {
 }
 
 /// Launch to lights
-pub fn RtTraceToLights<'a>(scene: &RtScene, ray: &RtRay) -> Option<RtHit> {
+pub fn RtTraceToLights(scene: &RtScene, ray: &RtRay) -> Option<RtHit> {
     let light = scene.get_scene_light();
 
     // Compute intersections
@@ -44,4 +45,15 @@ pub fn RtTraceToLights<'a>(scene: &RtScene, ray: &RtRay) -> Option<RtHit> {
         return Some( RtHit::new(true, color, hitSg.P) )
     }
     None
+}
+
+/// Launch a ray on a scene
+pub fn RtReflectRay(normal: &RtVec3, sg: &RtShaderGlobals) -> RtRay {
+    RtRay { 
+        origin: sg.P, 
+        dir: sg.ray_dir - 2.0 * RtVec3::dot(sg.ray_dir, *normal) * *normal,
+        bounces: sg.bounces + 1, 
+        x: sg.x, 
+        y: sg.y
+    }
 }

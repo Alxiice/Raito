@@ -10,7 +10,7 @@ use crate::rt_shader_globals::*;
 use crate::rt_types::*;
 use crate::rt_ray::*;
 use crate::rt_scene::*;
-use crate::RtTraceToLights;
+use crate::rt_render::*;
 
 
 // ========================================
@@ -28,7 +28,8 @@ pub struct LambertShader {
 
 impl RtShader for LambertShader {
     fn evaluate(&self, scene: &RtScene, sg: &RtShaderGlobals) -> RtRGBA {
-        let ray = RtRay::new(sg, sg.P, sg.N);
+        // let ray = RtRay::new(sg, sg.P, sg.N);
+        let ray = RtReflectRay(&sg.N, &sg);
         let hit = RtTraceToLights(scene, &ray);
         if hit.is_some() {
             let hit = hit.unwrap();

@@ -143,6 +143,16 @@ impl std::ops::Sub<RtPoint3> for RtPoint3 {
     }
 }
 
+impl std::ops::Sub<RtVec3> for RtVec3 {
+    type Output = RtVec3;
+    /// Implements Sub for RtPoint3 - RtPoint3
+    /// 
+    /// Result is a vector
+    fn sub(self, rhs: RtVec3) -> Self::Output {
+        Self::Output { x: self.x - rhs.x, y: self.y - rhs.y, z: self.z - rhs.z }
+    }
+}
+
 impl std::ops::Mul<f32> for RtVec3 {
     type Output = Self;
     /// Implements Mul for RtVec3 * f32
