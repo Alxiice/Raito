@@ -45,6 +45,19 @@ impl Default for RtRGBA {
     }
 }
 
+impl std::ops::Div<f32> for RtRGBA {
+    type Output = RtRGBA;
+    /// Implements Div for RtRGBA / f32
+    fn div(self, rhs: f32) -> Self::Output {
+        Self::Output { 
+            r: (self.r as f32 / rhs) as u8, 
+            g: (self.g as f32 / rhs) as u8, 
+            b: (self.b as f32 / rhs) as u8, 
+            a: (self.a as f32 / rhs) as u8  // Or don't touch to a ?
+        }
+    }
+}
+
 impl RtRGBA {
     pub fn new(r: u8, g: u8, b: u8) -> Self {
         let a: u8 = 255;

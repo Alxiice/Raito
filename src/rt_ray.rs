@@ -7,8 +7,15 @@
 
 // TODO : could be moved in rt_types
 
+use std::f32::NAN;
+
+use crate::rt_objects::rt_object_base::RtObject;
 use crate::rt_types::*;
 use crate::rt_shader_globals::*;
+
+pub enum RtRayType {
+    RT_RAY_UNKNOWN
+}
 
 /// Describes a ray
 pub struct RtRay {
@@ -53,6 +60,28 @@ impl std::fmt::Display for RtRay {
         write!(f, "<RtRay O=({}, {}, {}), dir=({}, {}, {})>", 
             self.origin.x, self.origin.y, self.origin.z,
             self.dir.x, self.dir.y, self.dir.z)
+    }
+}
+
+
+/// Holds ray intersection
+/// 
+/// **Note** : Could also store a reference to the object if we add a lifetime
+pub struct RtRayHit {
+    pub hit: bool,
+    pub dist: f32,
+    pub P: Option<RtPoint3>
+}
+
+impl Default for RtRayHit {
+    fn default() -> Self {
+        Self { hit: false, dist: NAN, P: None }
+    }
+}
+
+impl RtRayHit {
+    pub fn new(hit: bool, dist: f32, P: RtPoint3) -> Self {
+        Self { hit, dist, P: Some(P) }
     }
 }
 

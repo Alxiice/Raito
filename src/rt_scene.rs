@@ -33,13 +33,19 @@ impl Default for RtScene {
             camera_fov: 1.0,
             // Sphere params
             sphere: RtSphere { 
-                object_params: ObjectParams { name: String::default(), shader: Box::new(DEFAULT_SHADER) },
+                object_params: ObjectParams::new(
+                    String::from("/root/geo/sphere"),
+                    String::from("geometry"),
+                    Box::new(DEFAULT_SHADER)),
                 center: RtPoint3::default(),
                 radius: 1.0
             },
             // Light params
             light: RtPointLight {
-                object_params: ObjectParams { name: String::default(), shader: Box::new(DEFAULT_LIGHT) },
+                object_params: ObjectParams::new(
+                    String::from("/root/lights/point_light"),
+                    String::from("light"),
+                    Box::new(DEFAULT_LIGHT)),
                 center: RtPoint3::default(),
                 radius: 1.0
             }
@@ -61,20 +67,19 @@ impl RtScene {
         Self {
             camera_fov,
             sphere: RtSphere {
-                object_params: ObjectParams {
-                    name: String::from("sphere"), 
-                    shader: Box::new(LambertShader{ color: sphere_color })
-                },
+                object_params: ObjectParams::new(
+                    String::from("/root/geo/sphere"),
+                    String::from("geometry"),
+                    Box::new(LambertShader{ color: sphere_color })),
                 center: sphere_center,
                 radius: sphere_radius
             },
             light: RtPointLight {
-                object_params: ObjectParams {
-                    name: String::from("light"),
-                    shader: Box::new(LightShader { 
-                        color: light_color, intensity: light_intensity 
-                    })
-                },
+                object_params: ObjectParams::new(
+                    String::from("/root/light/point_light"),
+                    String::from("light"),
+                    Box::new(LightShader { 
+                        color: light_color, intensity: light_intensity})),
                 center: light_center,
                 radius: light_radius
             }
@@ -89,5 +94,9 @@ impl RtScene {
 
     pub fn get_scene_light(&self) -> Box<& dyn RtObject> {
         Box::new(&self.light)
+    }
+
+    pub fn get_scene_objects(&self) -> Vec<Box<& dyn RtObject>> {
+        vec![self.get_scene_light(), self.get_scene_geometry()]
     }
 }

@@ -1,3 +1,5 @@
+use log::warn;
+
 /// =====================================================
 ///                    Raito Render
 /// 
@@ -7,7 +9,6 @@
 
 use crate::rt_types::*;
 use crate::rt_ray::*;
-use crate::rt_shader_globals::*;
 use crate::rt_objects::rt_object_base::*;
 
 
@@ -40,7 +41,7 @@ impl RtObject for RtSphere {
         &self.object_params
     }
     
-    fn get_intersection_point(&self, ray: &RtRay) -> Option<RtPoint3> {
+    fn get_intersection(&self, ray: &RtRay) -> Option<RtRayHit> {
         let a = RtVec3::dot(ray.dir, ray.dir);
         let b = 2.0 * RtVec3::dot(ray.dir, ray.origin - self.center);
         let c = (ray.origin - self.center).squared() - self.radius * self.radius;
@@ -53,30 +54,16 @@ impl RtObject for RtSphere {
         let x1 = (-b + sqrt_delta) / (2.0 * a);
         let x2 = (-b - sqrt_delta) / (2.0 * a);
         if x1 >= 0.0 && (x2 < 0.0 || x1 <= x2) {
-            return Some(ray.origin + x1 * ray.dir)
+            Some(RtRayHit::new(true, x1, ray.origin + x1 * ray.dir))
         }
-        if x2 >= 0.0 {
-            return Some(ray.origin + x2 * ray.dir)
+        else if x2 >= 0.0 {
+            Some(RtRayHit::new(true, x2, ray.origin + x2 * ray.dir))
+        } else {
+            None
         }
-        None
     }
 
     fn get_normal(&self, point: &RtPoint3) -> RtVec3 {
         (*point - self.center).normalize()
-    }
-
-    /// Compute intersection with ray and sphere
-    fn intersect(&self, ray: &RtRay) -> Option<RtShaderGlobals> {
-        let intersection_point = self.get_intersection_point(ray);
-        if !intersection_point.is_some() {
-            return None
-        }
-        let mut sg = RtShaderGlobals::from_intersection(
-            ray, 
-            self.get_name(),
-            intersection_point.unwrap()
-        );
-        sg.N = self.get_normal(&sg.P);
-        Some(sg)
     }
 }
