@@ -9,7 +9,6 @@
 
 use std::f32::NAN;
 
-use crate::rt_objects::rt_object_base::RtObject;
 use crate::rt_types::*;
 use crate::rt_shader_globals::*;
 

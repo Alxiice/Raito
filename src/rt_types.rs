@@ -21,19 +21,6 @@ pub struct RtRGBA {
     pub a: u8
 }
 
-impl std::ops::Mul<f32> for RtRGBA {
-    type Output = Self;
-    /// Implements Mul for RtRGBA * f32
-    fn mul(self, rhs: f32) -> Self::Output {
-        Self::Output { 
-            r: (self.r as f32 * rhs) as u8, 
-            g: (self.g as f32 * rhs) as u8, 
-            b: (self.b as f32 * rhs) as u8,
-            a: self.a  // That's a choice ?
-        }
-    }
-}
-
 impl Default for RtRGBA {
     fn default() -> Self {
         Self {
@@ -63,6 +50,15 @@ impl RtRGBA {
         let a: u8 = 255;
         Self {
             r, g, b, a
+        }
+    }
+
+    pub fn clamp(self) -> RtRGBA {
+        RtRGBA {
+            r: self.r.max(0).min(255),
+            g: self.g.max(0).min(255),
+            b: self.b.max(0).min(255),
+            a: self.a.max(0).min(255)
         }
     }
 
@@ -105,6 +101,72 @@ impl RtRGBA {
     pub const GREEN: Self = Self::from_rgb(0, 255, 0);
     pub const BLUE : Self = Self::from_rgb(0, 0, 255);
     pub const ERRCOLOR : Self = Self::from_rgb(230, 50, 150);
+}
+
+impl std::ops::Add<RtRGBA> for RtRGBA {
+    type Output = Self;
+    /// Implements Add for RtRGBA * RtRGBA
+    fn add(self, rhs: RtRGBA) -> Self::Output {
+        RtRGBA {
+            r: self.r + rhs.r,
+            g: self.g + rhs.g,
+            b: self.b + rhs.b,
+            a: (self.a + rhs.a).min(255).max(0)
+        }
+    }
+}
+
+impl std::ops::AddAssign<RtRGBA> for RtRGBA {
+    /// Implements Add for RtRGBA += RtRGBA
+    fn add_assign(&mut self, rhs: RtRGBA) {
+        self.r += rhs.r;
+        self.g += rhs.g;
+        self.b += rhs.b;
+        self.a = (self.a + rhs.a).clamp(0, 255);
+    }
+}
+
+impl std::ops::Mul<f32> for RtRGBA {
+    type Output = Self;
+    /// Implements Mul for RtRGBA * f32
+    fn mul(self, rhs: f32) -> Self::Output {
+        Self::Output { 
+            r: (self.r as f32 * rhs) as u8, 
+            g: (self.g as f32 * rhs) as u8, 
+            b: (self.b as f32 * rhs) as u8,
+            a: self.a  // That's a choice ?
+        }
+    }
+}
+
+impl std::ops::Mul<RtRGBA> for RtRGBA {
+    type Output = Self;
+    /// Implements Mul for RtRGBA * RtRGBA
+    fn mul(self, rhs: RtRGBA) -> Self::Output {
+        // // Convert to normalized space
+        // let r1 = self.r as f32 / 255.0;
+        // let g1 = self.g as f32 / 255.0;
+        // let b1 = self.b as f32 / 255.0;
+        // let a1 = self.a as f32 / 255.0;
+        // let r2 = rhs.r as f32 / 255.0;
+        // let g2 = rhs.g as f32 / 255.0;
+        // let b2 = rhs.b as f32 / 255.0;
+        // let a2 = rhs.a as f32 / 255.0;
+        // // Then normalize
+        // Self::Output {
+        //     r: (255.0 * (r1 * r2)) as u8,
+        //     g: (255.0 * (g1 * g2)) as u8,
+        //     b: (255.0 * (b1 * b2)) as u8,
+        //     a: (255.0 * (a1 * a2)) as u8
+        // }
+        // Simplification
+        Self::Output {
+            r: ((self.r as f32 * rhs.r as f32) / 255.0) as u8,
+            g: ((self.g as f32 * rhs.g as f32) / 255.0) as u8,
+            b: ((self.b as f32 * rhs.b as f32) / 255.0) as u8,
+            a: ((self.a as f32 * rhs.a as f32) / 255.0) as u8
+        }
+    }
 }
 
 

@@ -7,14 +7,11 @@
 
 use std::f32::NAN;
 
-use log::warn;
-
 use crate::rt_ray::*;
 use crate::rt_shader_globals::*;
 use crate::rt_scene::*;
 use crate::RtVec3;
 use crate::rt_objects::rt_object_base::*;
-use crate::rt_objects::RtObjectTypes;
 
 
 // ========================================
