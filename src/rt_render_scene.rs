@@ -53,7 +53,7 @@ impl RenderResult {
     /// Utility function to query the color of a pixel
     pub fn get_pixel_color(&mut self, x: usize, y: usize) -> Color32 {
         let color = self.render_grid[usize::from(y)][usize::from(x)];
-        Color32::from_rgb(color.r(), color.g(), color.b())
+        color.to_color32()
     }
 }
 

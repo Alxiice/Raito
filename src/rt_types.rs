@@ -15,19 +15,19 @@ use egui::Color32;
 /// RGBA Color
 #[derive(Copy, Clone)]
 pub struct RtRGBA {
-    pub r: u8,
-    pub g: u8,
-    pub b: u8,
-    pub a: u8
+    pub r: f32,
+    pub g: f32,
+    pub b: f32,
+    pub a: f32
 }
 
 impl Default for RtRGBA {
     fn default() -> Self {
         Self {
-            r: 0,
-            g: 0,
-            b: 0,
-            a: 255
+            r: 0.0,
+            g: 0.0,
+            b: 0.0,
+            a: 1.0
         }
     }
 }
@@ -37,81 +37,85 @@ impl std::ops::Div<f32> for RtRGBA {
     /// Implements Div for RtRGBA / f32
     fn div(self, rhs: f32) -> Self::Output {
         Self::Output { 
-            r: (self.r as f32 / rhs) as u8, 
-            g: (self.g as f32 / rhs) as u8, 
-            b: (self.b as f32 / rhs) as u8, 
-            a: (self.a as f32 / rhs) as u8  // Or don't touch to a ?
+            r: self.r / rhs, 
+            g: self.g / rhs, 
+            b: self.b / rhs, 
+            a: self.a / rhs  // Or don't touch to a ?
         }
     }
 }
 
 impl RtRGBA {
-    pub fn new(r: u8, g: u8, b: u8) -> Self {
-        let a: u8 = 255;
+    pub fn new(r: f32, g: f32, b: f32) -> Self {
         Self {
-            r, g, b, a
+            r, g, b, a: 1.0
         }
     }
 
     pub fn clamp(self) -> RtRGBA {
         RtRGBA {
-            r: self.r.max(0).min(255),
-            g: self.g.max(0).min(255),
-            b: self.b.max(0).min(255),
-            a: self.a.max(0).min(255)
+            r: self.r.max(0.0).min(1.0),
+            g: self.g.max(0.0).min(1.0),
+            b: self.b.max(0.0).min(1.0),
+            a: self.a.max(0.0).min(1.0)
         }
     }
 
     #[inline]
-    pub const fn from_rgb(r: u8, g: u8, b: u8) -> Self {
-        let a: u8 = 255;
-        Self { r, g, b, a }
+    pub const fn from_rgb(r: f32, g: f32, b: f32) -> Self {
+        Self { r, g, b, a: 1.0 }
     }
 
-    pub const fn from_color32(color: Color32) -> Self {
+    // Would be better on const function but not supported byy rust yet
+    pub fn from_color32(color: Color32) -> Self {
         Self { 
-            r: color.r(),
-            g: color.g(),
-            b: color.b(),
-            a: color.a()
+            r: color.r() as f32 / 255.0,
+            g: color.g() as f32 / 255.0,
+            b: color.b() as f32 / 255.0,
+            a: color.a() as f32 / 255.0
         }
     }
 
-    pub fn set_color(&mut self, r: u8, g: u8, b: u8) {
-        self.r = r;
-        self.g = g;
-        self.b = b;
+    // Would be better on const function but not supported byy rust yet
+    pub fn to_color32(&self) -> Color32 {
+        // TODO : handle A ?
+        Color32::from_rgb(
+            (self.r * 255.0) as u8, 
+            (self.g * 255.0) as u8, 
+            (self.b * 255.0) as u8
+        )
     }
 
-    pub fn r(&self) -> u8 {
+    pub fn r(&self) -> f32 {
         self.r
     }
 
-    pub fn g(&self) -> u8 {
+    pub fn g(&self) -> f32 {
         self.g
     }
 
-    pub fn b(&self) -> u8 {
+    pub fn b(&self) -> f32 {
         self.b
     }
 
-    pub const BLACK: Self = Self::from_rgb(0, 0, 0);
-    pub const WHITE: Self = Self::from_rgb(255, 255, 255);
-    pub const RED  : Self = Self::from_rgb(255, 0, 0);
-    pub const GREEN: Self = Self::from_rgb(0, 255, 0);
-    pub const BLUE : Self = Self::from_rgb(0, 0, 255);
-    pub const ERRCOLOR : Self = Self::from_rgb(230, 50, 150);
+    pub const BLACK: Self       = Self::from_rgb(0.0, 0.0, 0.0);
+    pub const WHITE: Self       = Self::from_rgb(1.0, 1.0, 1.0);
+    pub const RED  : Self       = Self::from_rgb(1.0, 0.0, 0.0);
+    pub const GREEN: Self       = Self::from_rgb(0.0, 1.0, 0.0);
+    pub const BLUE : Self       = Self::from_rgb(0.0, 0.0, 1.0);
+    pub const ERRCOLOR : Self   = Self::from_rgb(0.9, 0.5, 0.6);
 }
 
 impl std::ops::Add<RtRGBA> for RtRGBA {
     type Output = Self;
     /// Implements Add for RtRGBA * RtRGBA
     fn add(self, rhs: RtRGBA) -> Self::Output {
+        let opacity_base: f32 = self.a.clamp(0.0, 1.0);
         RtRGBA {
             r: self.r + rhs.r,
             g: self.g + rhs.g,
             b: self.b + rhs.b,
-            a: (self.a + rhs.a).min(255).max(0)
+            a: opacity_base + (1.0 - opacity_base) * rhs.a.clamp(0.0, 1.0)
         }
     }
 }
@@ -119,10 +123,11 @@ impl std::ops::Add<RtRGBA> for RtRGBA {
 impl std::ops::AddAssign<RtRGBA> for RtRGBA {
     /// Implements Add for RtRGBA += RtRGBA
     fn add_assign(&mut self, rhs: RtRGBA) {
+        let opacity_base: f32 = self.a.clamp(0.0, 1.0);
         self.r += rhs.r;
         self.g += rhs.g;
         self.b += rhs.b;
-        self.a = (self.a + rhs.a).clamp(0, 255);
+        self.a = opacity_base + (1.0 - opacity_base) * rhs.a.clamp(0.0, 1.0);
     }
 }
 
@@ -131,10 +136,10 @@ impl std::ops::Mul<f32> for RtRGBA {
     /// Implements Mul for RtRGBA * f32
     fn mul(self, rhs: f32) -> Self::Output {
         Self::Output { 
-            r: (self.r as f32 * rhs) as u8, 
-            g: (self.g as f32 * rhs) as u8, 
-            b: (self.b as f32 * rhs) as u8,
-            a: self.a  // That's a choice ?
+            r: self.r * rhs, 
+            g: self.g * rhs, 
+            b: self.b * rhs,
+            a: self.a * rhs  // ?
         }
     }
 }
@@ -161,10 +166,10 @@ impl std::ops::Mul<RtRGBA> for RtRGBA {
         // }
         // Simplification
         Self::Output {
-            r: ((self.r as f32 * rhs.r as f32) / 255.0) as u8,
-            g: ((self.g as f32 * rhs.g as f32) / 255.0) as u8,
-            b: ((self.b as f32 * rhs.b as f32) / 255.0) as u8,
-            a: ((self.a as f32 * rhs.a as f32) / 255.0) as u8
+            r: self.r * rhs.r,
+            g: self.g * rhs.g,
+            b: self.b * rhs.b,
+            a: self.a * rhs.a
         }
     }
 }
