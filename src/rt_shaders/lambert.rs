@@ -34,7 +34,7 @@ impl RtShader for LambertShader {
     fn evaluate(&self, scene: &RtScene, sg: &RtShaderGlobals) -> RtRGBA {
         // Create ray
         let mut ray = RtMakeRay(sg, RtRayType::RT_RAY_UNKNOWN, RtVec3::default(), MAX_RAY_LENGTH);
-        ray.origin = ray.origin + RT_EPSILON * sg.N;
+        ray.origin = ray.origin + RT_EPSILON * sg.N;  // Avoid self intersections
         // Reflect the ray
         RtReflectRay(&mut ray, &sg.ray_dir, &sg.N, &sg);
         
