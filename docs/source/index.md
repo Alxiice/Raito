@@ -28,7 +28,7 @@ The goal for a final product is to have :
 - Widgets that enables the user to edit the current scene (move lights, etc)
 
 <figure markdown="span">
-  ![Raito Renderview](../images/raito_render_view.png)
+  ![Raito Renderview](images/raito_render_view.png)
   <figcaption>This is the Raito RenderView</figcaption>
 </figure>
 
@@ -48,12 +48,12 @@ The goal for a final product is to have :
     - [ ] with triangles
 - [ ] Simple ray tracing
     - [x] Tracing one ray and checking for hit
-    - [ ] Propagate ray tracing information onwards and backwards once we get a response from a light or we reached the end
+    - [x] Propagate ray tracing information onwards and backwards once we get a response from a light or we reached the end
 - [ ] simple light model
     - [ ] skydome
-    - [ ] point lights
+    - [x] point lights
 - [ ] Light transport with shading information, simple shading models
-    - [ ] reflective
+    - [x] reflective
     - [ ] diffuse
     - [ ] glass
 - [ ] Be able to move the camera (camera & world space, for now no model space). Not interactive (move the camera from the parameters tab)
