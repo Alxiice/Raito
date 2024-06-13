@@ -12,6 +12,9 @@
 use egui::Color32;
 
 
+pub const RT_EPSILON: f32 = 0.0001;
+
+
 /// RGBA Color
 #[derive(Copy, Clone)]
 pub struct RtRGBA {

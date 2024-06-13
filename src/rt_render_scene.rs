@@ -6,6 +6,7 @@
 /// =====================================================
 
 use egui::Color32;
+use log::warn;
 
 use crate::rt_types::*;
 use crate::rt_scene::*;
@@ -49,6 +50,11 @@ impl RenderResult {
         // TODO : is rendergrid[y][x] correct ?
         self.render_grid[usize::from(y)][usize::from(x)] = color;
     }
+
+    /// Utility function to query the color of a pixel
+    pub fn rt_get_pixel_color(&mut self, x: usize, y: usize) -> RtRGBA {
+        self.render_grid[usize::from(y)][usize::from(x)]
+    }
     
     /// Utility function to query the color of a pixel
     pub fn get_pixel_color(&mut self, x: usize, y: usize) -> Color32 {
@@ -71,15 +77,18 @@ pub fn RtRenderScene(scene: &mut RtScene, result: &mut RenderResult) {
     camera.camera_fov = scene.camera_fov;
     let cam_rays = RtCameraRayIterator::new(camera);
     for camera_ray in cam_rays {
-        let ray = &camera_ray;  // Reference to the camera ray
-        let hit = RtTraceRay(scene, ray);
-        if hit.is_some() {
-            let hitResult = hit.unwrap();
-            result.set_pixel_color(
-                usize::from(ray.x), usize::from(ray.y), hitResult.colorOutput);
-        } else {
-            result.set_pixel_color(
-                usize::from(ray.x), usize::from(ray.y), RtRGBA::ERRCOLOR);
+        let x = camera_ray.x();
+        let y = camera_ray.y();
+        let mut pixelColor = RtRGBA::BLACK;
+        for ray in camera_ray {
+            let hit = RtTraceRay(scene, &ray);
+            if hit.is_some() {
+                let hitResult = hit.unwrap();
+                pixelColor += hitResult.colorOutput / (NB_SUBPIXELS as f32);
+            } else {
+                pixelColor += RtRGBA::ERRCOLOR / (NB_SUBPIXELS as f32);
+            }
         }
+        result.set_pixel_color(x, y, pixelColor);
     }
 }
