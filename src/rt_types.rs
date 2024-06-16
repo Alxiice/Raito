@@ -11,9 +11,15 @@
 
 use egui::Color32;
 
+// ========================================
+//  Numbers
+// ========================================
 
 pub const RT_EPSILON: f32 = 0.0001;
 
+// ========================================
+//  Colors
+// ========================================
 
 /// RGBA Color
 #[derive(Copy, Clone)]
@@ -252,7 +258,6 @@ impl std::ops::Mul<RtVec3> for f32 {
     }
 }
 
-
 // Dot product
 impl std::ops::Mul<RtVec3> for RtVec3 {
     type Output = f32;
@@ -292,18 +297,26 @@ impl std::ops::Add<RtVec3> for RtPoint3 {
 }
 
 impl RtVec3 {
+    pub fn new(x: f32, y: f32, z: f32) -> Self {
+        Self { x, y, z }
+    }
+
+    pub fn length_squared(&self) -> f32 {
+        self.x * self.x + self.y * self.y + self.z * self.z
+    }
+
     /// Vector length
-    pub fn length(self) -> f32 {
-        (self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
+    pub fn length(&self) -> f32 {
+        self.length_squared().sqrt()
+    }
+
+    pub fn squared(self) -> f32 {
+        self * self
     }
 
     /// Normalized vector
     pub fn normalize(self) -> Self {
         self / self.length()
-    }
-
-    pub fn squared(self) -> f32 {
-        self * self
     }
 
     pub fn dot(u: Self, v: Self) -> f32 {

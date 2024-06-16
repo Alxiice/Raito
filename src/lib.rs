@@ -12,6 +12,8 @@
 
 pub mod rt_types;
 pub use rt_types::*;
+pub mod rt_sampler;
+pub use rt_sampler::*;
 pub mod rt_ray;
 pub use rt_ray::*;
 pub mod rt_camera;
