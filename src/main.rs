@@ -13,6 +13,8 @@
 
 mod render_window_params;
 mod render_window;
+mod rt_test;
+pub use rt_test::rt_test;
 pub use render_window::RaitoRenderApp;
 use log::info;
 use clap::{Parser, ValueEnum};
@@ -46,6 +48,8 @@ fn main() -> Result<(), eframe::Error> {
 
     env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
     info!("====================== RAITO RENDER ======================");
+
+    rt_test();
 
     let native_options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()

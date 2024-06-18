@@ -19,3 +19,4 @@ log = "0.4"
 env_logger = "0.11.3"
 clap = { version = "4.5.4", features = ["derive"] }
 rand = "*"
+rand_chacha = "*"
