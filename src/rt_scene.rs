@@ -20,6 +20,8 @@ use self::rt_geometries::RtSphere;
 pub struct RtScene {
     // Camera params
     pub camera_fov: f32,
+    pub camera_position: RtPoint3,
+    pub camera_rotation: RtPoint3,
     // Sphere params
     pub sphere: RtSphere,
     // Light params
@@ -31,6 +33,8 @@ impl Default for RtScene {
         Self {
             // Camera params
             camera_fov: 1.0,
+            camera_position: RtPoint3::default(),
+            camera_rotation: RtPoint3::default(),
             // Sphere params
             sphere: RtSphere { 
                 object_params: ObjectParams::new(
@@ -56,6 +60,8 @@ impl Default for RtScene {
 impl RtScene {
     /// Update scene parameters
     pub fn new(camera_fov: f32, 
+               camera_position: RtPoint3,
+               camera_rotation: RtPoint3,
                sphere_color: RtRGBA,
                sphere_center: RtPoint3,
                sphere_radius: f32,
@@ -66,6 +72,8 @@ impl RtScene {
     {
         Self {
             camera_fov,
+            camera_position,
+            camera_rotation,
             sphere: RtSphere {
                 object_params: ObjectParams::new(
                     String::from("/root/geo/sphere"),

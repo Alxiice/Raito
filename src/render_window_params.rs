@@ -8,10 +8,39 @@
 use egui::*;
 use raito::RtPoint3;
 
+
+fn DragFloatWidget(ui: &mut egui::Ui, updated: &mut bool,
+                   var: &mut f32, min: f32, max: f32)
+{
+    if ui.add(
+        DragValue::new(var)
+            .speed(0.1)
+            .min_decimals(1)
+            .max_decimals(5)
+            .clamp_range(min..=max)
+            .prefix("x: ")
+        ).changed() {
+        *updated = true
+    }
+}
+
+fn Point3Widget(ui: &mut egui::Ui, updated: &mut bool,
+                x: &mut f32, y: &mut f32, z: &mut f32)
+{
+    ui.horizontal(|ui| {
+        DragFloatWidget(ui, updated, x, -50.0, 50.0);
+        DragFloatWidget(ui, updated, y, -50.0, 50.0);
+        DragFloatWidget(ui, updated, z, -50.0, 50.0);
+    });
+}
+
 /// Render parameters in the UI
 pub struct RtParameters {
+    pub ipr_enabled: bool,
     // Camera params
     pub camera_fov: f32,
+    pub camera_position: RtPoint3,
+    pub camera_rotation: RtPoint3,
     // Light params
     pub light_position: RtPoint3,
     pub light_radius: f32,
@@ -27,8 +56,11 @@ impl Default for RtParameters {
     /// Setup the parameters UI to default value
     fn default() -> Self {
         Self {
+            ipr_enabled: false, 
             // Camera params
             camera_fov: 47.0,
+            camera_position: RtPoint3::new(0.0, 0.0, 0.0),
+            camera_rotation: RtPoint3::new(0.0, 0.0, 0.0),
             // Light params
             light_position: RtPoint3::new(0.0, 2.0, 0.0),
             light_radius: 1.0,
@@ -46,9 +78,27 @@ fn camera_ui(ui: &mut egui::Ui, params: &mut RtParameters, updated: &mut bool) {
     ui.label("FOV");
     // 20~=250mm, 150~=6mm
     if ui.add(egui::Slider::new(&mut params.camera_fov, 10.0..=150.0)
-        .drag_value_speed(1.0)).changed() {
+    .drag_value_speed(1.0)).changed() {
         *updated = true
     }
+    ui.end_row();
+    
+    ui.label("Position");
+    Point3Widget(
+        ui, updated, 
+        &mut params.camera_position.x, 
+        &mut params.camera_position.y, 
+        &mut params.camera_position.z, 
+    );
+    ui.end_row();
+
+    ui.label("Rotation");
+    Point3Widget(
+        ui, updated, 
+        &mut params.camera_rotation.x, 
+        &mut params.camera_rotation.y, 
+        &mut params.camera_rotation.z, 
+    );
     ui.end_row();
 }
 

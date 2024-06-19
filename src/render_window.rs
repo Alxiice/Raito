@@ -9,6 +9,11 @@
 use egui::*;
 // use raito::*;
 use log::*;
+use raito::rt_objects::rt_geometries::RtSphere;
+use raito::rt_objects::rt_lights::RtPointLight;
+use raito::rt_shaders::lambert::LambertShader;
+use raito::rt_shaders::lightShader::LightShader;
+use raito::rt_objects::rt_object_base::{ObjectParams, RtObject};
 
 use crate::render_window_params::*;
 
@@ -61,14 +66,40 @@ impl RaitoRenderApp {
         }
     }
 
+    fn update_params(&mut self) {
+        self.scene.camera_fov = self.parameters.camera_fov;
+        self.scene.camera_position = self.parameters.camera_position;
+        self.scene.camera_rotation = self.parameters.camera_rotation;
+        self.scene.sphere.object_params.shader = Box::new(LambertShader { 
+            color: RtRGBA::from_color32(self.parameters.sphere_color)
+        });
+        self.scene.sphere.center = self.parameters.sphere_center;
+        self.scene.sphere.radius = self.parameters.sphere_radius;
+        self.scene.light.object_params.shader = Box::new(LightShader { 
+            color: RtRGBA::from_color32(self.parameters.light_color), 
+            intensity: self.parameters.light_intensity
+        });
+        self.scene.light.center = self.parameters.light_position;
+        self.scene.light.radius = self.parameters.light_radius;
+    }
+
+    fn re_render(&mut self) {
+        // Launch render
+        debug!("> Start render");
+        RtRenderScene(&mut self.scene, &mut self.result);
+        debug!("> Render finished");
+        // Update display image
+        self.update_image();
+    }
+
     /// Start the render
     pub fn start_render(&mut self) {
-        info!("> Start render");
-        
         // Setup scene
         info!("> Setup render scene");
         self.scene = RtScene::new(
             self.parameters.camera_fov,
+            self.parameters.camera_position,
+            self.parameters.camera_rotation,
             RtRGBA::from_color32(self.parameters.sphere_color),
             self.parameters.sphere_center,
             self.parameters.sphere_radius,
@@ -78,19 +109,18 @@ impl RaitoRenderApp {
             self.parameters.light_intensity
         );
 
-        // Launch render
-        RtRenderScene(&mut self.scene, &mut self.result);
-        info!("> Render finished");
+        self.parameters.ipr_enabled = true;
 
-        // Update display image
-        self.update_image();
+        // Launch render
+        info!("Starting IPR");
+        self.re_render();
     }
 
     /// Stops the render
     pub fn stop_render(&mut self, ctx: &egui::Context) {
         // TODO : When IPR is implemented, stops the IPR
-        info!("> Closes Raito RenderView");
-        ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+        info!("> Stopping IPR");
+        self.parameters.ipr_enabled = false;
     }
 }
 
@@ -108,7 +138,13 @@ impl eframe::App for RaitoRenderApp {
                 ui.vertical(|ui| {
                     ui.horizontal(|ui| {
                         let available_size = [(WIDTH as f32) / 2.0 - 4.0, 25.0];
-                        let start_button = Button::new("Start Render");
+                        let button_color = if self.parameters.ipr_enabled {
+                            Color32::from_rgb(0, 190, 0)  
+                        } else {
+                            Color32::from_rgb(60, 60, 60)
+                        };
+                        let start_button = Button::new("Start Render")
+                            .fill(button_color);
                         let stop_button = Button::new("Stop Render");
                         if ui.add_sized(available_size, start_button).clicked() {
                             self.start_render();
@@ -132,9 +168,12 @@ impl eframe::App for RaitoRenderApp {
                 ui.vertical(|ui| {
                     setup_params_ui(ui, &mut self.parameters, &mut updated);
                 });
-                if updated {
-                    self.start_render();
-                } 
+                if updated && self.parameters.ipr_enabled {
+                    self.update_params();
+                    self.re_render();
+                } else {
+                    self.update_image();
+                }
             });
         })
     }
