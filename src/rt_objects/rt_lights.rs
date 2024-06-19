@@ -64,12 +64,12 @@ impl RtObject for RtPointLight {
         let x1 = (-b + sqrt_delta) / (2.0 * a);
         let x2 = (-b - sqrt_delta) / (2.0 * a);
         if x1 >= 0.0 && (x2 < 0.0 || x1 <= x2) {
-            return Some(RtRayHit::new(true, x1, ray.origin + x1 * ray.dir))
+            Some(RtRayHit::new(true, x1, ray.origin + x1 * ray.dir))
+        } else if x2 >= 0.0 {
+            Some(RtRayHit::new(true, x2, ray.origin + x2 * ray.dir))
+        } else {
+            None
         }
-        if x2 >= 0.0 {
-            return Some(RtRayHit::new(true, x2, ray.origin + x2 * ray.dir))
-        }
-        None
     }
 
     fn get_normal(&self, point: &RtPoint3) -> RtVec3 {

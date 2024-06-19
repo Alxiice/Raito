@@ -9,6 +9,8 @@
 //  Colors
 // ========================================
 
+use std::ops::Neg;
+
 use egui::Color32;
 
 // ========================================
@@ -37,19 +39,6 @@ impl Default for RtRGBA {
             g: 0.0,
             b: 0.0,
             a: 1.0
-        }
-    }
-}
-
-impl std::ops::Div<f32> for RtRGBA {
-    type Output = RtRGBA;
-    /// Implements Div for RtRGBA / f32
-    fn div(self, rhs: f32) -> Self::Output {
-        Self::Output { 
-            r: self.r / rhs, 
-            g: self.g / rhs, 
-            b: self.b / rhs, 
-            a: self.a / rhs  // Or don't touch to a ?
         }
     }
 }
@@ -140,6 +129,19 @@ impl std::ops::AddAssign<RtRGBA> for RtRGBA {
     }
 }
 
+impl std::ops::Mul<RtRGBA> for f32 {
+    type Output = RtRGBA;
+    /// Implements Mul for f32 * RtRGBA
+    fn mul(self, rhs: RtRGBA) -> Self::Output {
+        Self::Output { 
+            r: self * rhs.r, 
+            g: self * rhs.g, 
+            b: self * rhs.b,
+            a: self * rhs.a  // ?
+        }
+    }
+}
+
 impl std::ops::Mul<f32> for RtRGBA {
     type Output = Self;
     /// Implements Mul for RtRGBA * f32
@@ -157,28 +159,24 @@ impl std::ops::Mul<RtRGBA> for RtRGBA {
     type Output = Self;
     /// Implements Mul for RtRGBA * RtRGBA
     fn mul(self, rhs: RtRGBA) -> Self::Output {
-        // // Convert to normalized space
-        // let r1 = self.r as f32 / 255.0;
-        // let g1 = self.g as f32 / 255.0;
-        // let b1 = self.b as f32 / 255.0;
-        // let a1 = self.a as f32 / 255.0;
-        // let r2 = rhs.r as f32 / 255.0;
-        // let g2 = rhs.g as f32 / 255.0;
-        // let b2 = rhs.b as f32 / 255.0;
-        // let a2 = rhs.a as f32 / 255.0;
-        // // Then normalize
-        // Self::Output {
-        //     r: (255.0 * (r1 * r2)) as u8,
-        //     g: (255.0 * (g1 * g2)) as u8,
-        //     b: (255.0 * (b1 * b2)) as u8,
-        //     a: (255.0 * (a1 * a2)) as u8
-        // }
-        // Simplification
         Self::Output {
             r: self.r * rhs.r,
             g: self.g * rhs.g,
             b: self.b * rhs.b,
             a: self.a * rhs.a
+        }
+    }
+}
+
+impl std::ops::Div<f32> for RtRGBA {
+    type Output = RtRGBA;
+    /// Implements Div for RtRGBA / f32
+    fn div(self, rhs: f32) -> Self::Output {
+        Self::Output { 
+            r: self.r / rhs, 
+            g: self.g / rhs, 
+            b: self.b / rhs, 
+            a: self.a / rhs  // Or don't touch to a ?
         }
     }
 }
@@ -219,6 +217,19 @@ pub struct RtVec3 {
 impl std::fmt::Display for RtVec3 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "<RtVec3 ({}, {}, {})>", self.x, self.y, self.z)
+    }
+}
+
+impl Neg for RtVec3 {
+    type Output = RtVec3;
+
+    /// Implements -RtVec3
+    fn neg(self) -> Self::Output {
+        RtVec3 {
+            x: -self.x,
+            y: -self.y,
+            z: -self.z,
+        }
     }
 }
 

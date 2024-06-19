@@ -139,7 +139,7 @@ impl eframe::App for RaitoRenderApp {
                     ui.horizontal(|ui| {
                         let available_size = [(WIDTH as f32) / 2.0 - 4.0, 25.0];
                         let button_color = if self.parameters.ipr_enabled {
-                            Color32::from_rgb(0, 190, 0)  
+                            Color32::from_rgb(0, 190, 0)
                         } else {
                             Color32::from_rgb(60, 60, 60)
                         };

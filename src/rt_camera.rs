@@ -10,7 +10,7 @@ use crate::rt_ray::*;
 use crate::rt_shader_globals::*;
 use std::cell::OnceCell;
 
-pub const NB_SUBPIXELS: u8 = 1;
+pub const NB_SUBPIXELS: u8 = 2;
 
 /// Describes a camera
 /// 

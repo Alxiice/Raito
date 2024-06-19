@@ -53,8 +53,7 @@ impl RtObject for RtSphere {
         let x2 = (-b - sqrt_delta) / (2.0 * a);
         if x1 >= 0.0 && (x2 < 0.0 || x1 <= x2) {
             Some(RtRayHit::new(true, x1, ray.origin + x1 * ray.dir))
-        }
-        else if x2 >= 0.0 {
+        } else if x2 >= 0.0 {
             Some(RtRayHit::new(true, x2, ray.origin + x2 * ray.dir))
         } else {
             None
