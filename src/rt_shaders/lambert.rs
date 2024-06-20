@@ -37,7 +37,7 @@ fn sample_in_hemisphere(n: RtVec3) -> RtVec3 {
     while vec.length_squared() >= 1.0 {
         vec = RtVec3::random_range(-1.0, 1.0);
     }
-    vec = vec.normalize();
+    vec = (n + vec).normalize();
     // Make sure the sampled ray is in the correct hemisphere
     if RtVec3::dot(vec, n) > 0.0 { vec } else { -vec }
 }
@@ -69,7 +69,10 @@ impl RtShader for LambertShader {
                 // return hit.colorOutput / (hit.P - sg.P).length();
                 // return hit.colorOutput * (hit.P - sg.P).length().powf(2.0)
                 // diffuse += albedo * sg->Li * sg->we * AI_ONEOVERPI * max(0, LdotN);
-                diffuse += self.color * hit.colorOutput * (1.0 / (hit.P - sg.P).length_squared());
+                // Ray distance : (hit.P - sg.P).length_squared()
+                diffuse += self.color * hit.colorOutput * RT_ONEOVERPI * RtVec3::dot(ray.dir, sg.N);
+            } else {
+                diffuse += self.color * RtRGBA::ERRCOLOR * RT_ONEOVERPI * RtVec3::dot(ray.dir, sg.N);
             }
         }
         out_color += diffuse / (NB_SAMPLES as f32);

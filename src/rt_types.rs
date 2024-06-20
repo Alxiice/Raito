@@ -14,10 +14,11 @@ use std::ops::Neg;
 use egui::Color32;
 
 // ========================================
-//  Numbers
+//  Constants
 // ========================================
 
 pub const RT_EPSILON: f32 = 0.0001;
+pub const RT_ONEOVERPI: f32 = 0.3183;
 
 // ========================================
 //  Colors
@@ -232,6 +233,19 @@ impl Neg for RtVec3 {
         }
     }
 }
+
+impl std::ops::Add<RtVec3> for RtVec3 {
+    type Output = Self;
+    /// Implements Add for RtVec3 * RtVec3
+    fn add(self, rhs: RtVec3) -> Self::Output {
+        RtVec3 {
+            x: self.x + rhs.x,
+            y: self.y + rhs.y,
+            z: self.z + rhs.z
+        }
+    }
+}
+
 
 impl std::ops::Sub<RtPoint3> for RtPoint3 {
     type Output = RtVec3;

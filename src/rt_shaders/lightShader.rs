@@ -27,6 +27,6 @@ pub struct LightShader {
 
 impl RtShader for LightShader {
     fn evaluate(&self, scene: &RtScene, sg: &RtShaderGlobals) -> RtRGBA {
-        self.color // * self.intensity
+        self.color * self.intensity
     }
 }
