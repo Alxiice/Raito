@@ -49,7 +49,7 @@ fn main() -> Result<(), eframe::Error> {
     env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
     info!("====================== RAITO RENDER ======================");
 
-    rt_test();
+    // rt_test();
 
     let native_options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()

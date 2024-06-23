@@ -18,5 +18,7 @@ eframe = { version = "0.27.0", default-features = false, features = [
 log = "0.4"
 env_logger = "0.11.3"
 clap = { version = "4.5.4", features = ["derive"] }
-rand = "*"
-rand_chacha = "*"
+rand = "0.8.5"
+rand_chacha = "0.3.1"
+quick-xml = "0.33.0"
+failure = "0.1.8"

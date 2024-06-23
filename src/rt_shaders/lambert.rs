@@ -1,5 +1,3 @@
-use log::warn;
-
 /// =====================================================
 ///                    Raito Render
 /// 
@@ -13,10 +11,9 @@ use crate::rt_types::*;
 use crate::rt_ray::*;
 use crate::rt_scene::*;
 use crate::rt_render::*;
-use crate::rt_sampler::*;
 
 const MAX_RAY_LENGTH: f32 = 10000.0;
-const NB_SAMPLES: u8 = 5;
+const NB_SAMPLES: u8 = 10;
 
 // ========================================
 //  Shader structure

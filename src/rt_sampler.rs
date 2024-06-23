@@ -11,11 +11,11 @@ use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 
 
-fn random_float() -> f32 {
+pub fn random_float() -> f32 {
     rand::thread_rng().gen()
 }
 
-fn random_float_range(x: f32, y: f32) -> f32 {
+pub fn random_float_range(x: f32, y: f32) -> f32 {
     rand::thread_rng().gen_range(x..y)
 }
 

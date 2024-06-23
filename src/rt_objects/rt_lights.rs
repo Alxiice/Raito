@@ -21,7 +21,7 @@ pub struct RtSkydomeLight {
 }
 
 impl RtSkydomeLight {
-    const RT_TYPE: &'static str = "<RtLight : Skydome>";
+    const _RT_TYPE: &'static str = "<RtLight : Skydome>";
 }
 
 /// Point light
@@ -32,7 +32,7 @@ pub struct RtPointLight {
 }
 
 impl RtPointLight {
-    const RT_TYPE: &'static str = "<RtLight : Point>";
+    const _RT_TYPE: &'static str = "<RtLight : Point>";
 }
 
 /// Defines light types

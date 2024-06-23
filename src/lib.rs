@@ -29,5 +29,8 @@ pub mod rt_shader_globals;
 pub use rt_shader_globals::*;
 pub mod rt_render;
 pub use rt_render::*;
-pub mod rt_render_scene;
-pub use rt_render_scene::*;
+pub mod rt_render_output;
+pub use rt_render_output::*;
+
+pub const RT_DEFAULT_WINDOW_HEIGHT: usize = 400;
+pub const RT_DEFAULT_WINDOW_WIDTH: usize = 400;

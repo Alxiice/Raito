@@ -25,7 +25,7 @@ pub struct StateVectorShader {
 // ========================================
 
 impl RtShader for StateVectorShader {
-    fn evaluate(&self, scene: &RtScene, sg: &RtShaderGlobals) -> RtRGBA {
+    fn evaluate(&self, _scene: &RtScene, sg: &RtShaderGlobals) -> RtRGBA {
         // TODO : Switch depending on the value of self.output
         // - N : sg.N
         // - P : sg.P

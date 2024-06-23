@@ -5,12 +5,16 @@
 ///   Defines a camera
 /// =====================================================
 
+use std::cell::OnceCell;
+
 use crate::rt_types::*;
 use crate::rt_ray::*;
 use crate::rt_shader_globals::*;
-use std::cell::OnceCell;
+use crate::rt_sampler::*;
 
-pub const NB_SUBPIXELS: u8 = 2;
+pub const SUBPX_SEED: u64 = 1;
+pub const NB_SUBPIXELS: u8 = 4;
+pub const INV_NB_SUBPIXELS: f32 = 1.0 / (NB_SUBPIXELS as f32);
 
 /// Describes a camera
 /// 
@@ -32,16 +36,6 @@ impl RtCamera {
             aspect_ratio,
             camera_width: OnceCell::from(camera_width),
             camera_height: OnceCell::from((camera_width as f32 / aspect_ratio) as u16)
-        }
-    }
-
-    pub fn copy(&self) -> Self {
-        Self {
-            center: self.center.clone(),
-            camera_fov: self.camera_fov.clone(),
-            aspect_ratio: self.aspect_ratio.clone(),
-            camera_width: OnceCell::from(self.camera_width.clone()),
-            camera_height: OnceCell::from(self.camera_height.clone())
         }
     }
 
@@ -77,7 +71,7 @@ impl RtCamera {
     /// We shoot the ray at the center of the pixel for each pixel in the grid
     /// 
     /// (x: column, y: row) : pixel position
-    fn get_camera_ray(&self, x: u16, y: u16, px: f32, py: f32) -> RtRay {
+    pub fn get_camera_ray(&self, x: u16, y: u16, px: f32, py: f32) -> RtRay {
         // Get a point on the viewport
         // Start with top left
         let mut viewport_point = self.top_left();
@@ -95,31 +89,28 @@ impl RtCamera {
 }
 
 
-pub struct RtSubpixelRayIterator {
-    // Stop condition
-    stop: bool,
-    // Camera
-    camera: RtCamera,
-    /// Column position
-    pub x: u16,
-    /// Row position
-    pub y: u16,
-    // Subpixels
-    px_i: u8,
-    py_i: u8
+// ========================================
+//  Iterator 
+// (iterate on rays from the camera)
+// ========================================
+
+pub struct RtPixel {
+    x: u16,
+    y: u16
 }
 
-impl RtSubpixelRayIterator {
-    /// Creates an iterator for camera rays
-    pub fn new(camera: RtCamera, x: u16, y: u16) -> Self {
-        Self {
-            camera,
-            stop: false,
-            x,
-            y,
-            px_i: 0,
-            py_i: 0
-        }
+impl RtPixel {
+    pub fn new(x: u16, y: u16) -> Self {
+        Self { x, y }
+    }
+
+    pub fn get_ray(&self, camera: &RtCamera) -> RtRay {
+        camera.get_camera_ray(
+            self.x, 
+            self.y,
+            random_float(),
+            random_float()
+        )
     }
 
     pub fn x(&self) -> usize {
@@ -129,91 +120,50 @@ impl RtSubpixelRayIterator {
     pub fn y(&self) -> usize {
         usize::from(self.y)
     }
-
 }
-
-impl Iterator for RtSubpixelRayIterator {
-    type Item = RtRay;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.stop {
-            return None
-        }
-
-        let camera_ray = self.camera.get_camera_ray(
-            self.x, 
-            self.y,
-            (self.px_i as f32 + 0.5) / (NB_SUBPIXELS as f32),
-            (self.py_i as f32 + 0.5) / (NB_SUBPIXELS as f32),
-        );
-
-        // Still space on the X subpixel
-        if self.px_i < NB_SUBPIXELS - 1 {
-            self.px_i += 1;
-        // Still space on the Y subpixel
-        } else if self.py_i > NB_SUBPIXELS {
-            self.px_i = 0;
-            self.py_i += 1;
-        // No more space
-        } else {
-            self.stop = true;
-        }
-        Some(camera_ray)
-    }
-}
-
 
 /// Could be reimplemented as trait to iterate in 
 /// - buckets
 /// - also not top left to bottom right but allow circular, etc
-pub struct RtCameraRayIterator {
-    // Stop condition
-    stop: bool,
+pub struct RtCameraRayIterator<'a> {
     // Camera
-    camera: RtCamera,
-    /// Column position
+    camera: &'a RtCamera,
+    /// Current position
     current_x: u16,
-    /// Row position
     current_y: u16,
 }
 
-impl RtCameraRayIterator {
+impl<'a> RtCameraRayIterator<'a> {
     /// Creates an iterator for camera rays
-    pub fn new(camera: RtCamera) -> Self {
+    pub fn new(camera: &'a RtCamera) -> Self {
         Self {
             camera,
-            stop: false,
             current_x: 0,
             current_y: 0
         }
     }
 }
 
-impl Iterator for RtCameraRayIterator {
-    type Item = RtSubpixelRayIterator;
+impl<'a> Iterator for RtCameraRayIterator<'a> {
+    type Item = RtPixel;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.stop {
+        if self.current_x >= *self.camera.camera_width() ||
+           self.current_y >= *self.camera.camera_height() {
             return None
         }
 
-        let subpixel_iterator = RtSubpixelRayIterator::new(
-            self.camera.copy(), self.current_x, self.current_y);
+        let pixel = RtPixel::new(self.current_x, self.current_y);
 
         // Compute next pixel position
         if self.current_x >= self.camera.camera_width() - 1 {
-            // Cannot pick right pixel
-            if self.current_y >= self.camera.camera_height() - 1 {
-                // Cannot pick the next row
-                self.stop = true;
-            } else {
-                // Pick first pixel of the bottom line
-                self.current_x  = 0;
-                self.current_y += 1;
-            }
+            // Pick first pixel of the bottom line
+            self.current_x  = 0;
+            self.current_y += 1;
         } else {
             self.current_x += 1;
         }
-        Some(subpixel_iterator)
+        
+        Some(pixel)
     }
 }

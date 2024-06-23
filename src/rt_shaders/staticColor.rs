@@ -25,7 +25,7 @@ pub struct StaticColorShader {
 // ========================================
 
 impl RtShader for StaticColorShader {
-    fn evaluate(&self, scene: &RtScene, sg: &RtShaderGlobals) -> RtRGBA {
+    fn evaluate(&self, _scene: &RtScene, _sg: &RtShaderGlobals) -> RtRGBA {
         self.color
     }
 }

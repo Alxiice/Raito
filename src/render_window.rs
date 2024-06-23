@@ -7,32 +7,150 @@
 /// =====================================================
 
 use egui::*;
-// use raito::*;
 use log::*;
+
+use raito::{RtRenderScene, RT_DEFAULT_WINDOW_HEIGHT, RT_DEFAULT_WINDOW_WIDTH};
+const DEFAULT_COLOR: Color32 = Color32::from_rgb(0, 0, 0);
+use raito::rt_types::*;
+use crate::render_window_params::*;
+use raito::rt_camera::RtCamera;
+use raito::rt_objects::rt_object_base::ObjectParams;
 use raito::rt_objects::rt_geometries::RtSphere;
 use raito::rt_objects::rt_lights::RtPointLight;
-use raito::rt_shaders::lambert::LambertShader;
+use raito::rt_shaders::stateVector::StateVectorShader;
+// use raito::rt_shaders::lambert::LambertShader;
 use raito::rt_shaders::lightShader::LightShader;
-use raito::rt_objects::rt_object_base::{ObjectParams, RtObject};
-
-use crate::render_window_params::*;
-
-use raito::rt_types::*;
 use raito::rt_scene::RtScene;
-use raito::rt_render_scene::{RenderResult, RtRenderScene};
+use raito::rt_render_output::RtRenderResult;
 
 
-const WIDTH : usize = 400;
-const HEIGHT: usize = 400;
-const DEFAULT_COLOR: Color32 = Color32::from_rgb(0, 0, 0);
+// ========================================
+//  RtScene contains the scene setup
+//  and is doomed to disappear to be 
+//  replaced by a XML file that we will 
+//  load
+// ========================================
+
+/// Describes a render scene
+struct RenderScene {
+    // Viewport
+    width: u16,
+    height: u16,
+    // Camera params
+    camera_fov: f32,
+    _camera_position: RtPoint3,
+    _camera_rotation: RtPoint3,
+    // Sphere params
+    _sphere_color: RtRGBA,
+    sphere_center: RtPoint3,
+    sphere_radius: f32,
+    // Light params
+    light_center: RtPoint3,
+    light_radius: f32,
+    light_color: RtRGBA,
+    light_intensity: f32
+    
+}
+
+impl Default for RenderScene {
+    fn default() -> Self {
+        Self {
+            height: RT_DEFAULT_WINDOW_HEIGHT as u16,
+            width: RT_DEFAULT_WINDOW_WIDTH as u16,
+            // Camera params
+            camera_fov: 1.0,
+            _camera_position: RtPoint3::default(),
+            _camera_rotation: RtPoint3::default(),
+            // Sphere params
+            _sphere_color: RtRGBA::BLACK,
+            sphere_center: RtPoint3::default(),
+            sphere_radius: 1.0,
+            // Light params
+            light_center: RtPoint3::default(),
+            light_radius: 1.0,
+            light_color: RtRGBA::WHITE,
+            light_intensity: 1.0
+        }
+    }
+}
+
+impl RenderScene {
+    /// Update scene parameters
+    pub fn new(width: u16, height: u16,
+               camera_fov: f32, _camera_position: RtPoint3, _camera_rotation: RtPoint3,
+               _sphere_color: RtRGBA, sphere_center: RtPoint3, sphere_radius: f32,
+               light_center: RtPoint3, light_radius: f32, light_color: RtRGBA, light_intensity: f32
+    ) -> Self {
+        Self {
+            // Viewport
+            width, height, 
+            // Camera
+            camera_fov, _camera_position, _camera_rotation,
+            // Sphere
+            _sphere_color, sphere_center, sphere_radius,
+            // Light
+            light_center, light_radius, light_color, light_intensity
+        }
+    }
+
+    pub fn to_render_scene(self) -> RtScene {
+        // Create camera
+        let aspect = (self.width as f32) / (self.height as f32);
+        let mut camera = RtCamera::new(self.width, aspect);
+        camera.camera_fov = self.camera_fov;
+        // camera.center = self.camera_position
+        // camera.rotation = self.camera_rotation
+
+        // Create render scene
+        let mut render_scene = RtScene::new(camera);
+
+        // Add shapes
+        let sphere = RtSphere { 
+            object_params: ObjectParams::new(
+                String::from("/root/geo/sphere"),
+                String::from("geometry"),
+                Box::new(StateVectorShader {
+                    output: String::from("N")
+                })
+                // Box::new(LambertShader {
+                //     color: self.sphere_color
+                // })
+            ),
+            center: self.sphere_center,
+            radius: self.sphere_radius
+        };
+        render_scene.add_shape(Box::new(sphere));
+
+        // Add lights
+        let light = RtPointLight {
+            object_params: ObjectParams::new(
+                String::from("/root/lights/point_light"),
+                String::from("light"),
+                Box::new(LightShader {
+                    color: self.light_color,
+                    intensity: self.light_intensity
+                })),
+            center: self.light_center,
+            radius: self.light_radius
+        };
+        render_scene.add_light(Box::new(light));
+
+        render_scene
+    }
+}
+
+
+// ========================================
+//  Now the window code
+// ========================================
 
 /// Create app structure
 pub struct RaitoRenderApp {
     // Parameters
     parameters: RtParameters,
     // Render Scene
-    scene: RtScene,
-    result: RenderResult,
+    scene: Option<RtScene>,
+    result: RtRenderResult,
     // Displayed image
     color_image: ColorImage,
 }
@@ -42,9 +160,11 @@ impl Default for RaitoRenderApp {
     fn default() -> Self {
         Self {
             parameters: RtParameters::default(),
-            scene: RtScene::default(),
-            result: RenderResult::new(),
-            color_image: ColorImage::new([WIDTH, HEIGHT], DEFAULT_COLOR),
+            scene: None,
+            result: RtRenderResult::new(
+                RT_DEFAULT_WINDOW_WIDTH, RT_DEFAULT_WINDOW_HEIGHT),
+            color_image: ColorImage::new(
+                [RT_DEFAULT_WINDOW_WIDTH, RT_DEFAULT_WINDOW_HEIGHT], DEFAULT_COLOR),
         }
     }
 }
@@ -59,44 +179,23 @@ impl RaitoRenderApp {
 
     /// Update the current image cache
     fn update_image(&mut self) {
-        for y in 0..HEIGHT {
-            for x in 0..WIDTH {
-                self.color_image[(x, y)] = self.result.get_pixel_color(x, y);
+        for y in 0..self.result.height {
+            for x in 0..self.result.width {
+                self.color_image[(x, self.result.height - y - 1)] = self.result.get_pixel_color(x, y);
             }
         }
     }
 
     fn update_params(&mut self) {
-        self.scene.camera_fov = self.parameters.camera_fov;
-        self.scene.camera_position = self.parameters.camera_position;
-        self.scene.camera_rotation = self.parameters.camera_rotation;
-        self.scene.sphere.object_params.shader = Box::new(LambertShader { 
-            color: RtRGBA::from_color32(self.parameters.sphere_color)
-        });
-        self.scene.sphere.center = self.parameters.sphere_center;
-        self.scene.sphere.radius = self.parameters.sphere_radius;
-        self.scene.light.object_params.shader = Box::new(LightShader { 
-            color: RtRGBA::from_color32(self.parameters.light_color), 
-            intensity: self.parameters.light_intensity
-        });
-        self.scene.light.center = self.parameters.light_position;
-        self.scene.light.radius = self.parameters.light_radius;
-    }
+        // TODO
+        // Instead of recreating the scene
+        // Use object IDs to update values
+        // Also try to be smart and keep tracked on updated 
+        // objects & parameters so that we don't update everything
+        // on the object
 
-    fn re_render(&mut self) {
-        // Launch render
-        debug!("> Start render");
-        RtRenderScene(&mut self.scene, &mut self.result);
-        debug!("> Render finished");
-        // Update display image
-        self.update_image();
-    }
-
-    /// Start the render
-    pub fn start_render(&mut self) {
-        // Setup scene
-        info!("> Setup render scene");
-        self.scene = RtScene::new(
+        let scene = RenderScene::new(
+            self.result.width as u16, self.result.height as u16, 
             self.parameters.camera_fov,
             self.parameters.camera_position,
             self.parameters.camera_rotation,
@@ -108,6 +207,47 @@ impl RaitoRenderApp {
             RtRGBA::from_color32(self.parameters.light_color),
             self.parameters.light_intensity
         );
+
+        // From our RtScene we create a render scene
+        self.scene = Some(scene.to_render_scene());
+    }
+
+    fn re_render(&mut self) {
+        // Launch render
+        debug!("> Start render");
+        let scene = self.scene.as_ref();
+        if scene.is_some() {
+            RtRenderScene(scene.unwrap(), &mut self.result);
+        } else {
+            error!("No scene to render !");
+        }
+        // if self.scene.is_some() {
+        // }
+        debug!("> Render finished");
+        // Update display image
+        self.update_image();
+    }
+
+    /// Start the render
+    pub fn start_render(&mut self) {
+        // Setup scene
+        info!("> Setup render scene");
+        let scene = RenderScene::new(
+            RT_DEFAULT_WINDOW_WIDTH as u16, RT_DEFAULT_WINDOW_HEIGHT as u16, 
+            self.parameters.camera_fov,
+            self.parameters.camera_position,
+            self.parameters.camera_rotation,
+            RtRGBA::from_color32(self.parameters.sphere_color),
+            self.parameters.sphere_center,
+            self.parameters.sphere_radius,
+            self.parameters.light_position,
+            self.parameters.light_radius,
+            RtRGBA::from_color32(self.parameters.light_color),
+            self.parameters.light_intensity
+        );
+
+        // From our RtScene we create a render scene
+        self.scene = Some(scene.to_render_scene());
 
         self.parameters.ipr_enabled = true;
 
@@ -137,7 +277,7 @@ impl eframe::App for RaitoRenderApp {
             ui.horizontal(|ui| {
                 ui.vertical(|ui| {
                     ui.horizontal(|ui| {
-                        let available_size = [(WIDTH as f32) / 2.0 - 4.0, 25.0];
+                        let available_size = [(RT_DEFAULT_WINDOW_WIDTH as f32) / 2.0 - 4.0, 25.0];
                         let button_color = if self.parameters.ipr_enabled {
                             Color32::from_rgb(0, 190, 0)
                         } else {

@@ -21,7 +21,7 @@ pub struct RtSphere {
 }
 
 impl RtSphere {
-    const RT_TYPE: &'static str = "<RtGeometry : Sphere>";
+    const _RT_TYPE: &'static str = "<RtGeometry : Sphere>";
 }
 
 /// Define geometry types

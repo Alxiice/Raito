@@ -1,4 +1,4 @@
-use log::{info, warn};
+use log::{error, info, warn};
 /// =====================================================
 ///                    Raito Render
 /// 
@@ -24,6 +24,11 @@ fn test_sampler() {
     info!("Weight : {}", RtSamplerGetSampleInvCount(&it));
 }
 
-pub fn rt_test() {
+pub fn rt_test() {  
     // test_sampler();
+    let path = "/home/alice/Documents/PROJECTS/RaitoRender/Raito/tests/scenes/scene_000.xml";
+    
+    read_xml(&path);
+
+    panic!("end");
 }

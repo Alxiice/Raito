@@ -9,9 +9,12 @@ use crate::rt_types::*;
 use crate::rt_ray::*;
 use crate::rt_shader_globals::*;
 use crate::rt_shaders::*;
-
 use self::rt_shader_base::RtShader;
 
+
+// ========================================
+//  Object parameters
+// ========================================
 
 pub struct ObjectParams {
     pub name: String,
@@ -28,6 +31,11 @@ impl ObjectParams {
         }
     }
 }
+
+
+// ========================================
+//  Object
+// ========================================
 
 pub trait RtObject {
     /// Get object parameters
@@ -72,5 +80,30 @@ pub trait RtObject {
             return None
         }
         Some(self.get_sg(ray, &intersection_point.unwrap()))
+    }
+}
+
+
+// ========================================
+//  Object list
+// ========================================
+
+// Define type linked to a list of object
+pub struct RtObjectList(Vec<Box<dyn RtObject>>);
+// Or : pub struct RtObjectList<'a>(Vec<Box<&'a dyn RtObject>>);
+
+impl RtObjectList {
+    pub fn new() -> Self {
+        Self {
+            0: Vec::new()
+        }
+    }
+
+    pub fn add_object(&mut self, shape: Box<dyn RtObject>) {
+        self.0.push(shape);
+    }
+
+    pub fn list_objects(&self) -> &Vec<Box<dyn RtObject>> {
+        &self.0
     }
 }

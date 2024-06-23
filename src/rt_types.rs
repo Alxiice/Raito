@@ -109,12 +109,13 @@ impl std::ops::Add<RtRGBA> for RtRGBA {
     type Output = Self;
     /// Implements Add for RtRGBA * RtRGBA
     fn add(self, rhs: RtRGBA) -> Self::Output {
-        let opacity_base: f32 = self.a.clamp(0.0, 1.0);
+        // let opacity_base: f32 = self.a.clamp(0.0, 1.0);
         RtRGBA {
             r: self.r + rhs.r,
             g: self.g + rhs.g,
             b: self.b + rhs.b,
-            a: opacity_base + (1.0 - opacity_base) * rhs.a.clamp(0.0, 1.0)
+            // a: opacity_base + (1.0 - opacity_base) * rhs.a.clamp(0.0, 1.0)
+            a: self.a + (1.0 - self.a) * rhs.a
         }
     }
 }
@@ -122,11 +123,12 @@ impl std::ops::Add<RtRGBA> for RtRGBA {
 impl std::ops::AddAssign<RtRGBA> for RtRGBA {
     /// Implements Add for RtRGBA += RtRGBA
     fn add_assign(&mut self, rhs: RtRGBA) {
-        let opacity_base: f32 = self.a.clamp(0.0, 1.0);
+        // let opacity_base: f32 = self.a.clamp(0.0, 1.0);
         self.r += rhs.r;
         self.g += rhs.g;
         self.b += rhs.b;
-        self.a = opacity_base + (1.0 - opacity_base) * rhs.a.clamp(0.0, 1.0);
+        // self.a = opacity_base + (1.0 - opacity_base) * rhs.a.clamp(0.0, 1.0);
+        self.a = self.a + (1.0 - self.a) * rhs.a;
     }
 }
 

@@ -5,106 +5,152 @@
 ///   Defines a render scene 
 /// =====================================================
 
+use log::{info, error};
+use std::io::Read;
+
+use quick_xml::Reader;
+use quick_xml::events::{Event, BytesStart};
+
+use crate::{RT_DEFAULT_WINDOW_HEIGHT, RT_DEFAULT_WINDOW_WIDTH};
 use crate::rt_types::*;
+use crate::rt_camera::RtCamera;
 use crate::rt_objects::*;
 use crate::rt_objects::rt_object_base::*;
 use crate::rt_shaders::*;
 
-use self::lambert::LambertShader;
+use stateVector::StateVectorShader;
+// use self::lambert::LambertShader;
 use self::lightShader::LightShader;
 use self::rt_lights::RtPointLight;
 use self::rt_geometries::RtSphere;
 
 
-/// Describes a render scene
-pub struct RtScene {
-    // Camera params
-    pub camera_fov: f32,
-    pub camera_position: RtPoint3,
-    pub camera_rotation: RtPoint3,
-    // Sphere params
-    pub sphere: RtSphere,
-    // Light params
-    pub light: RtPointLight,
-}
+// ========================================
+//  RtRenderScene is the scene object
+//  that can be passed everywhere and 
+//  used for intersections
+// ========================================
 
-impl Default for RtScene {
-    fn default() -> Self {
-        Self {
-            // Camera params
-            camera_fov: 1.0,
-            camera_position: RtPoint3::default(),
-            camera_rotation: RtPoint3::default(),
-            // Sphere params
-            sphere: RtSphere { 
-                object_params: ObjectParams::new(
-                    String::from("/root/geo/sphere"),
-                    String::from("geometry"),
-                    Box::new(DEFAULT_SHADER)),
-                center: RtPoint3::default(),
-                radius: 1.0
-            },
-            // Light params
-            light: RtPointLight {
-                object_params: ObjectParams::new(
-                    String::from("/root/lights/point_light"),
-                    String::from("light"),
-                    Box::new(DEFAULT_LIGHT)),
-                center: RtPoint3::default(),
-                radius: 1.0
-            }
-        }
-    }
+pub struct RtScene {
+    camera: RtCamera,
+    shapes: RtObjectList,
+    lights: RtObjectList,
 }
 
 impl RtScene {
-    /// Update scene parameters
-    pub fn new(camera_fov: f32, 
-               camera_position: RtPoint3,
-               camera_rotation: RtPoint3,
-               sphere_color: RtRGBA,
-               sphere_center: RtPoint3,
-               sphere_radius: f32,
-               light_center: RtPoint3,
-               light_radius: f32,
-               light_color: RtRGBA,
-               light_intensity: f32) -> Self
-    {
+    pub fn new(camera: RtCamera) -> Self {
         Self {
-            camera_fov,
-            camera_position,
-            camera_rotation,
-            sphere: RtSphere {
-                object_params: ObjectParams::new(
-                    String::from("/root/geo/sphere"),
-                    String::from("geometry"),
-                    Box::new(LambertShader{ color: sphere_color })),
-                center: sphere_center,
-                radius: sphere_radius
-            },
-            light: RtPointLight {
-                object_params: ObjectParams::new(
-                    String::from("/root/light/point_light"),
-                    String::from("light"),
-                    Box::new(LightShader { 
-                        color: light_color, intensity: light_intensity})),
-                center: light_center,
-                radius: light_radius
-            }
+            camera,
+            shapes: RtObjectList::new(),
+            lights: RtObjectList::new(),
         }
     }
 
-    // TODO : from one to multiple objects
-    /// Iterate on the scene objects
-    pub fn get_scene_geometry(&self) -> Box<& dyn RtObject> {
-        Box::new(&self.sphere)
+    pub fn get_camera(&self) -> &RtCamera {
+        &self.camera
     }
 
-    pub fn get_scene_light(&self) -> Box<& dyn RtObject> {
-        Box::new(&self.light)
+    pub fn list_shapes(&self) -> &Vec<Box<dyn RtObject>> {
+        self.shapes.list_objects()
     }
 
-    pub fn get_scene_objects(&self) -> Vec<Box<& dyn RtObject>> {
-        vec![self.get_scene_light(), self.get_scene_geometry()]
+    pub fn list_lights(&self) -> &Vec<Box<dyn RtObject>> {
+        self.lights.list_objects()
     }
+
+    pub fn add_shape(&mut self, shape: Box<dyn RtObject>) {
+        self.shapes.add_object(shape)
+    }
+
+    pub fn add_light(&mut self, light: Box<dyn RtObject>) {
+        self.lights.add_object(light)
+    }
+}
+
+
+// ========================================
+//  XML scene format
+// ========================================
+
+
+fn process_attributes(node: BytesStart<'_>) {
+    for attribute in node.attributes() {
+        let mut key = String::new();
+        _ = attribute.clone().unwrap().key.0.read_to_string(&mut key);
+        let value = attribute.clone().unwrap().value;
+        let value = std::str::from_utf8(value.as_ref()).unwrap();
+        info!("  -> {:?}={:?}", key, value);
+    }
+}
+
+fn parse_xml_file(path: &str) -> std::io::Result<()> {
+    let mut reader = Reader::from_file(path).unwrap();
+
+    let mut buffer = Vec::new();
+    let mut _counter = 0;
+
+    info!("Reading XML scene {path}");
+
+    loop {
+        match reader.read_event_into(&mut buffer) {
+            Err(e) => panic!("Error at position {}: {:?}", reader.buffer_position(), e),
+            Ok(Event::Eof) => break,
+            Ok(Event::Start(e)) => {
+                match e.name().as_ref() {
+                    // Scene
+                    b"scene" => {
+                        info!("Found tag : scene");
+                        process_attributes(e);
+                    },
+                    // Shapes
+                    b"shader" => {
+                        info!("Found tag : shader");
+                        process_attributes(e);
+                    },
+                    
+                    _ => {
+                        error!("unknown tag {:?}", e.name());
+                    },
+                }
+            }
+            Ok(Event::Empty(e)) => {
+                match e.name().as_ref() {
+                    // Parameter
+                    b"parameter" => {
+                        info!("Found tag : parameter");
+                        process_attributes(e);
+                    },
+                    _ => {
+                        error!("unknown tag {:?}", e.name());
+                    },
+                }
+            }
+            Ok(Event::End(e)) => {
+                match e.name().as_ref() {
+                    _ => {
+                        info!("closing tag {:?}", e.name());
+                    },
+                }
+            }
+            // Other Events are not important for us
+            Ok(_) => _counter += 1,
+        }
+
+        // clear buffer to prevent memory leak
+        buffer.clear();
+    }
+
+    info!("Scene loaded from XML file");
+
+    Result::Ok(())
+}
+
+
+pub fn read_xml(path: &str) {
+    // get_xml_stream(path);
+    // let reader = Reader::from_file(path);
+
+    let _ = parse_xml_file(path);
+    return;
+
 }
