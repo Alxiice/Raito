@@ -18,7 +18,7 @@ use raito::rt_objects::rt_object_base::ObjectParams;
 use raito::rt_objects::rt_geometries::RtSphere;
 use raito::rt_objects::rt_lights::RtPointLight;
 use raito::rt_shaders::stateVector::StateVectorShader;
-// use raito::rt_shaders::lambert::LambertShader;
+use raito::rt_shaders::lambert::LambertShader;
 use raito::rt_shaders::lightShader::LightShader;
 use raito::rt_scene::RtScene;
 use raito::rt_render_output::RtRenderResult;
@@ -109,12 +109,12 @@ impl RenderScene {
             object_params: ObjectParams::new(
                 String::from("/root/geo/sphere"),
                 String::from("geometry"),
-                Box::new(StateVectorShader {
-                    output: String::from("N")
-                })
-                // Box::new(LambertShader {
-                //     color: self.sphere_color
+                // Box::new(StateVectorShader {
+                //     output: String::from("N")
                 // })
+                Box::new(LambertShader {
+                    color: self._sphere_color
+                })
             ),
             center: self.sphere_center,
             radius: self.sphere_radius

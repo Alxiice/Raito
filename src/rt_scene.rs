@@ -11,18 +11,11 @@ use std::io::Read;
 use quick_xml::Reader;
 use quick_xml::events::{Event, BytesStart};
 
-use crate::{RT_DEFAULT_WINDOW_HEIGHT, RT_DEFAULT_WINDOW_WIDTH};
 use crate::rt_types::*;
 use crate::rt_camera::RtCamera;
 use crate::rt_objects::*;
 use crate::rt_objects::rt_object_base::*;
 use crate::rt_shaders::*;
-
-use stateVector::StateVectorShader;
-// use self::lambert::LambertShader;
-use self::lightShader::LightShader;
-use self::rt_lights::RtPointLight;
-use self::rt_geometries::RtSphere;
 
 
 // ========================================

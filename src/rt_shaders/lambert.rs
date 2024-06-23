@@ -13,7 +13,7 @@ use crate::rt_scene::*;
 use crate::rt_render::*;
 
 const MAX_RAY_LENGTH: f32 = 10000.0;
-const NB_SAMPLES: u8 = 10;
+const NB_SAMPLES: u8 = 5;
 
 // ========================================
 //  Shader structure
