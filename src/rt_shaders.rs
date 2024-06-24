@@ -10,10 +10,12 @@ pub mod staticColor;
 pub mod stateVector;
 pub mod lambert;
 pub mod lightShader;
+pub mod metal;
 
 use staticColor::StaticColorShader;
 use stateVector::StateVectorShader;
 use lambert::LambertShader;
+use metal::Metal;
 use lightShader::LightShader;
 
 use crate::RtRGBA;

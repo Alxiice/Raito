@@ -13,7 +13,7 @@ use crate::rt_shader_globals::*;
 use crate::rt_sampler::*;
 
 pub const SUBPX_SEED: u64 = 1;
-pub const NB_SUBPIXELS: u8 = 3;
+pub const NB_SUBPIXELS: u8 = 100;
 pub const INV_NB_SUBPIXELS: f32 = 1.0 / (NB_SUBPIXELS as f32);
 
 /// Describes a camera

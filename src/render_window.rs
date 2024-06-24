@@ -19,6 +19,7 @@ use raito::rt_objects::rt_geometries::RtSphere;
 use raito::rt_objects::rt_lights::RtPointLight;
 use raito::rt_shaders::stateVector::StateVectorShader;
 use raito::rt_shaders::lambert::LambertShader;
+use raito::rt_shaders::metal::Metal;
 use raito::rt_shaders::lightShader::LightShader;
 use raito::rt_scene::RtScene;
 use raito::rt_render_output::RtRenderResult;
@@ -194,66 +195,131 @@ impl RaitoRenderApp {
         // objects & parameters so that we don't update everything
         // on the object
 
-        let scene = RenderScene::new(
-            self.result.width as u16, self.result.height as u16, 
-            self.parameters.camera_fov,
-            self.parameters.camera_position,
-            self.parameters.camera_rotation,
-            RtRGBA::from_color32(self.parameters.sphere_color),
-            self.parameters.sphere_center,
-            self.parameters.sphere_radius,
-            self.parameters.light_position,
-            self.parameters.light_radius,
-            RtRGBA::from_color32(self.parameters.light_color),
-            self.parameters.light_intensity
-        );
+        // let scene = RenderScene::new(
+        //     self.result.width as u16, self.result.height as u16, 
+        //     self.parameters.camera_fov,
+        //     self.parameters.camera_position,
+        //     self.parameters.camera_rotation,
+        //     RtRGBA::from_color32(self.parameters.sphere_color),
+        //     self.parameters.sphere_center,
+        //     self.parameters.sphere_radius,
+        //     self.parameters.light_position,
+        //     self.parameters.light_radius,
+        //     RtRGBA::from_color32(self.parameters.light_color),
+        //     self.parameters.light_intensity
+        // );
 
         // From our RtScene we create a render scene
-        self.scene = Some(scene.to_render_scene());
+        // self.scene = Some(scene.to_render_scene());
+        let mut camera = RtCamera::new(self.result.width as u16, 1.0);
+        camera.camera_fov = self.parameters.camera_fov;
+        // camera.camera_fov = 140.0;
+        let mut scene = RtScene::new(camera);
+
+        // ===== Add geomtry =====
+        // Ground
+        scene.add_shape(Box::new(RtSphere { 
+            object_params: ObjectParams::new(
+                String::from(""), String::from(""),
+                Box::new(LambertShader {
+                    color: RtRGBA::from_rgb(0.8, 0.8, 0.0)
+                })
+            ),
+            center: RtPoint3::new(0.0, -100.5, -1.0),
+            radius: 100.0
+        }));
+        // Sphere center
+        scene.add_shape(Box::new(RtSphere { 
+            object_params: ObjectParams::new(
+                String::from(""), String::from(""),
+                Box::new(LambertShader {
+                    color: RtRGBA::from_rgb(0.1, 0.2, 0.5)
+                })
+            ),
+            center: RtPoint3::new(0.0, 0.0, -1.2),
+            radius: 0.5
+        }));
+        // Sphere left
+        scene.add_shape(Box::new(RtSphere { 
+            object_params: ObjectParams::new(
+                String::from(""), String::from(""),
+                Box::new(Metal {
+                    color: RtRGBA::from_rgb(0.8, 0.8, 0.8),
+                    fuzz: 0.3
+                })
+            ),
+            center: RtPoint3::new(-1.0, 0.0, -1.0),
+            radius: 0.5
+        }));
+        // Sphere right
+        scene.add_shape(Box::new(RtSphere { 
+            object_params: ObjectParams::new(
+                String::from(""), String::from(""),
+                Box::new(Metal {
+                    color: RtRGBA::from_rgb(0.8, 0.6, 0.2),
+                    fuzz: 1.0
+                })
+            ),
+            center: RtPoint3::new(1.0, 0.0, -1.0),
+            radius: 0.5
+        }));
+
+        self.scene = Some(scene);
     }
 
-    fn re_render(&mut self) {
+    fn re_render(&mut self) -> Option<std::time::Duration> {
         // Launch render
-        debug!("> Start render");
+        // debug!("> Start render");
         let scene = self.scene.as_ref();
+        let mut elapsed_time = None;
         if scene.is_some() {
+            let now = std::time::Instant::now();
             RtRenderScene(scene.unwrap(), &mut self.result);
+            elapsed_time = Some(now.elapsed());
         } else {
             error!("No scene to render !");
         }
         // if self.scene.is_some() {
         // }
-        debug!("> Render finished");
+        // debug!("> Render finished");
         // Update display image
         self.update_image();
+        elapsed_time
     }
 
     /// Start the render
     pub fn start_render(&mut self) {
         // Setup scene
         info!("> Setup render scene");
-        let scene = RenderScene::new(
-            RT_DEFAULT_WINDOW_WIDTH as u16, RT_DEFAULT_WINDOW_HEIGHT as u16, 
-            self.parameters.camera_fov,
-            self.parameters.camera_position,
-            self.parameters.camera_rotation,
-            RtRGBA::from_color32(self.parameters.sphere_color),
-            self.parameters.sphere_center,
-            self.parameters.sphere_radius,
-            self.parameters.light_position,
-            self.parameters.light_radius,
-            RtRGBA::from_color32(self.parameters.light_color),
-            self.parameters.light_intensity
-        );
+        // let scene = RenderScene::new(
+        //     RT_DEFAULT_WINDOW_WIDTH as u16, RT_DEFAULT_WINDOW_HEIGHT as u16, 
+        //     self.parameters.camera_fov,
+        //     self.parameters.camera_position,
+        //     self.parameters.camera_rotation,
+        //     RtRGBA::from_color32(self.parameters.sphere_color),
+        //     self.parameters.sphere_center,
+        //     self.parameters.sphere_radius,
+        //     self.parameters.light_position,
+        //     self.parameters.light_radius,
+        //     RtRGBA::from_color32(self.parameters.light_color),
+        //     self.parameters.light_intensity
+        // );
 
-        // From our RtScene we create a render scene
-        self.scene = Some(scene.to_render_scene());
+        // // From our RtScene we create a render scene
+        // self.scene = Some(scene.to_render_scene());
 
-        self.parameters.ipr_enabled = true;
+        self.update_params();
+
+        // self.parameters.ipr_enabled = true;
 
         // Launch render
-        info!("Starting IPR");
-        self.re_render();
+        // info!("Starting IPR");
+        info!("Starting render");
+        let duration = self.re_render();
+        info!("Render finished in !");
+        if duration.is_some() {
+            info!("-> took {} sec", duration.unwrap().as_secs_f64());
+        }
     }
 
     /// Stops the render

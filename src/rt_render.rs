@@ -44,6 +44,10 @@ pub fn RtReflectRay(ray: &mut RtRay, wo: &RtVec3, normal: &RtVec3, _sg: &RtShade
 
 /// Launch a ray on a scene
 pub fn RtTraceRay(scene: &RtScene, ray: &RtRay) -> Option<RtHit> {
+    if ray.bounces >= 3 {
+        return None
+    }
+
     let mut min_dist: f32 = NAN;
     let mut first_hit: Option<RtRayHit> = None;
     let mut first_hit_object: Option<&Box<dyn RtObject>> = None;
@@ -65,20 +69,20 @@ pub fn RtTraceRay(scene: &RtScene, ray: &RtRay) -> Option<RtHit> {
     }
 
     // Lights : Find closest hit point & object
-    let lights = scene.list_lights();
-    for light in lights {
-        // Compute intersections
-        let hit = light.get_intersection(ray);
-        // Execute shader
-        if hit.is_some() {
-            let hitSg = hit.unwrap();
-            if hitSg.dist < min_dist || min_dist.is_nan() {
-                min_dist = hitSg.dist;
-                first_hit = Some(hitSg);
-                first_hit_object = Some(light);
-            }
-        }
-    }
+    // let lights = scene.list_lights();
+    // for light in lights {
+    //     // Compute intersections
+    //     let hit = light.get_intersection(ray);
+    //     // Execute shader
+    //     if hit.is_some() {
+    //         let hitSg = hit.unwrap();
+    //         if hitSg.dist < min_dist || min_dist.is_nan() {
+    //             min_dist = hitSg.dist;
+    //             first_hit = Some(hitSg);
+    //             first_hit_object = Some(light);
+    //         }
+    //     }
+    // }
     
     // Execute shader on closest hit and return hit result
     if first_hit_object.is_some() {
@@ -86,11 +90,13 @@ pub fn RtTraceRay(scene: &RtScene, ray: &RtRay) -> Option<RtHit> {
         let hit_sg = first_hit_object.unwrap().get_sg(ray, &hit);
         let hit_point = hit.P.unwrap();
         let color = first_hit_object.unwrap().get_shader().evaluate(scene, &hit_sg);
-        // TODO : attenuation
 
         Some( RtHit::new(true, color, hit_point) )
     } else {
-        None
+        // None
+        let a = 0.5 * ray.dir.y + 1.0;
+        let skyColor = (1.0 - a) * RtRGBA::WHITE + a * RtRGBA::from_rgb(0.5, 0.7, 1.0);
+        Some(RtHit::new(false, skyColor, RtPoint3::default()))
     }
 }
 
@@ -137,6 +143,15 @@ pub fn RtTraceToLights(scene: &RtScene, ray: &RtRay) -> Option<RtHit> {
 }
 
 
+fn linear_to_gamma(linear_component: f32) -> f32 {
+    if linear_component > 0.0 {
+        linear_component.sqrt()
+    } else {
+        0.0
+    }
+}
+
+
 /// Launch render on scene
 pub fn RtRenderScene(scene: &RtScene, result: &mut RtRenderResult) {
     // TODO : for now the camera
@@ -158,10 +173,19 @@ pub fn RtRenderScene(scene: &RtScene, result: &mut RtRenderResult) {
                 let hitResult = hit.unwrap();
                 pixelColor += hitResult.colorOutput * INV_NB_SUBPIXELS;
             } else {
+                // let a = 0.5 * ray.dir.y + 1.0;
+                // let skyColor = (1.0 - a) * RtRGBA::WHITE + a * RtRGBA::from_rgb(0.5, 0.7, 1.0);
+                // pixelColor += skyColor * INV_NB_SUBPIXELS;
                 pixelColor += RtRGBA::ERRCOLOR  * INV_NB_SUBPIXELS;
             }
         }
         // panic!("Pixel : {} {}", camera_ray.x(), camera_ray.y());
-        result.set_pixel_color(camera_ray.x(), camera_ray.y(), pixelColor);
+        let outColor = RtRGBA::from_rgb(
+            linear_to_gamma(pixelColor.r), 
+            linear_to_gamma(pixelColor.g), 
+            linear_to_gamma(pixelColor.b) 
+        );
+
+        result.set_pixel_color(camera_ray.x(), camera_ray.y(), outColor);
     }
 }

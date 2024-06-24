@@ -13,7 +13,7 @@ use crate::rt_scene::*;
 use crate::rt_render::*;
 
 const MAX_RAY_LENGTH: f32 = 10000.0;
-const NB_SAMPLES: u8 = 5;
+const NB_SAMPLES: u8 = 1;
 
 // ========================================
 //  Shader structure
@@ -48,19 +48,17 @@ impl RtShader for LambertShader {
         // Result
         let mut out_color = RtRGBA::BLACK;
         
-        // Ambient contribution
-        out_color += self.color * 0.1;
-        
         // Diffuse contribution
         let mut diffuse = RtRGBA::BLACK;
-        for _ in 1..NB_SAMPLES {
+        for _ in 0..NB_SAMPLES {
             // Create ray
             let mut ray = RtMakeRay(sg, RtRayType::RT_RAY_UNKNOWN, RtVec3::default(), MAX_RAY_LENGTH);
             ray.origin = ray.origin + RT_EPSILON * sg.N;  // Avoid self intersections
             ray.dir = sample_in_hemisphere(sg.N);
     
             // Trace rays
-            let hit = RtTraceToLights(scene, &ray);
+            // let hit = RtTraceToLights(scene, &ray);
+            let hit = RtTraceRay(scene, &ray);
             if hit.is_some() {
                 let hit = hit.unwrap();
                 // return hit.colorOutput / (hit.P - sg.P).length();
@@ -73,21 +71,6 @@ impl RtShader for LambertShader {
             }
         }
         out_color += diffuse / (NB_SAMPLES as f32);
-
-        // Specular contribution
-        // let mut ray = RtMakeRay(sg, RtRayType::RT_RAY_UNKNOWN, RtVec3::default(), MAX_RAY_LENGTH);
-        // ray.origin = ray.origin + RT_EPSILON * sg.N;  // Avoid self intersections
-        // // Reflect the ray
-        // RtReflectRay(&mut ray, &sg.ray_dir, &sg.N, &sg);
-        // // Trace rays
-        // let hit = RtTraceToLights(scene, &ray);
-        // if hit.is_some() {
-        //     let hit = hit.unwrap();
-        //     // return hit.colorOutput / (hit.P - sg.P).length();
-        //     // return hit.colorOutput * (hit.P - sg.P).length().powf(2.0)
-        //     // diffuse += albedo * sg->Li * sg->we * AI_ONEOVERPI * max(0, LdotN);
-        //     out_color += 0.5 * self.color * hit.colorOutput * (1.0 / (hit.P - sg.P).length_squared());
-        // }
 
         out_color
     }
