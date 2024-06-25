@@ -18,6 +18,7 @@ use egui::Color32;
 // ========================================
 
 pub const RT_EPSILON: f32 = 0.0001;
+pub const RT_PI: f32 = 3.1416;
 pub const RT_ONEOVERPI: f32 = 0.3183;
 
 // ========================================

@@ -9,6 +9,7 @@ use std::f32::NAN;
 
 use crate::rt_types::*;
 use crate::rt_camera::*;
+use crate::rt_camera::RT_MAX_BOUNCES;
 use crate::rt_ray::*;
 use crate::rt_shader_globals::*;
 use crate::rt_scene::*;
@@ -51,7 +52,7 @@ pub fn RtRefractRay(ray: &mut RtRay, wo: &RtVec3, normal: &RtVec3, eta: f32, _sg
 
 /// Launch a ray on a scene
 pub fn RtTraceRay(scene: &RtScene, ray: &RtRay) -> Option<RtHit> {
-    if ray.bounces >= 5 {
+    if ray.bounces >= RT_MAX_BOUNCES {
         return None
     }
 

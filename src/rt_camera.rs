@@ -12,57 +12,79 @@ use crate::rt_ray::*;
 use crate::rt_shader_globals::*;
 use crate::rt_sampler::*;
 
-pub const SUBPX_SEED: u64 = 1;
-pub const NB_SUBPIXELS: u8 = 100;
+pub const RT_MAX_BOUNCES: u8 = 10;
+pub const NB_SUBPIXELS: u8 = 10;
 pub const INV_NB_SUBPIXELS: f32 = 1.0 / (NB_SUBPIXELS as f32);
+pub const SUBPX_SEED: u64 = 1;
 
 /// Describes a camera
 /// 
 /// Right handed system
 pub struct RtCamera {
-    pub center: RtPoint3,
-    pub camera_fov: f32,
-    pub aspect_ratio: f32,
-    camera_width : OnceCell<u16>,
-    camera_height: OnceCell<u16>,
+    // pub aspect_ratio: f32,
+    pub image_width : u16, // OnceCell<u16>
+    pub image_height: u16,
+    // pub lookfrom: RtPoint3,
+    center: RtPoint3,
+    pixel00_loc: RtPoint3,
+    pixel_delta_u: RtVec3,
+    pixel_delta_v: RtVec3,
+    // pub vfov: f32,
+    // lookat: RtPoint3,
+    // vup: RtVec3,
+    // u: RtVec3, v: RtVec3, w: RtVec3,
+}
+
+fn degrees_to_radians(degrees: f32) -> f32 {
+    degrees * RT_PI / 180.0
 }
 
 impl RtCamera {
     /// Creates a new camera
-    pub fn new(camera_width: u16, aspect_ratio: f32) -> Self {
-        Self { 
-            center: RtPoint3::new(0.0, 0.0, 0.0),
-            camera_fov: 50.0,
-            aspect_ratio,
-            camera_width: OnceCell::from(camera_width),
-            camera_height: OnceCell::from((camera_width as f32 / aspect_ratio) as u16)
-        }
-    }
+    pub fn new(aspect_ratio: f32, image_width: u16, vfov: f32, 
+               lookfrom: RtPoint3, lookat: RtPoint3, vup: RtVec3) -> Self {
+        let image_height = (image_width as f32 / aspect_ratio) as u16;
+        let image_height = if image_height < 1 { 1 } else { image_height };
 
-    /// Get width of the camera in pixel
-    #[inline]
-    pub fn camera_width(&self) -> &u16 {
-        self.camera_width.get().unwrap()
-    }
-    
-    /// Get height of the camera in pixel
-    #[inline]
-    pub fn camera_height(&self) -> &u16 {
-        self.camera_height.get().unwrap()
-    }
+        let center = lookfrom;
 
-    /// Top left point of the camera
-    /// 
-    /// In this first implementation the height of the camera is always 1.0
-    /// and therefore the width is the aspect ratio (aspect = width / height)
-    /// 
-    /// **TODO :** Later we could implement a camera with top, left, right, bottom values
-    #[inline]
-    fn top_left(&self) -> RtPoint3 {
-        RtPoint3 {
-            x: -(self.aspect_ratio) / 2.0,  // Left position (aspect / 2)
-            y: -0.5,  // Top position (1 / 2)
-            z: - (self.aspect_ratio) / (self.camera_fov / 2.0).to_radians().tan()
+        // Determine viewport dimensions.
+        let focal_length = (lookfrom - lookat).length();
+        let theta = degrees_to_radians(vfov);
+        let h = (theta / 2.0).tan();
+        let viewport_height = 2.0 * h * focal_length;
+        let viewport_width = viewport_height * (image_width as f32 / image_height as f32);
+
+        // Calculate the u,v,w unit basis vectors for the camera coordinate frame.
+        let w = (lookfrom - lookat).normalize();
+        let u = (RtVec3::cross(vup, w)).normalize();
+        let v = RtVec3::cross(w, u);
+
+        // Calculate the vectors across the horizontal and down the vertical viewport edges.
+        let viewport_u = viewport_width * u;
+        let viewport_v = viewport_height * -v;
+
+        // Calculate the horizontal and vertical delta vectors from pixel to pixel.
+        let pixel_delta_u = viewport_u / image_width as f32;
+        let pixel_delta_v = viewport_v / image_height as f32;
+
+        // Calculate the location of the upper left pixel.
+        let viewport_upper_left = center - (focal_length * w).to_point3() - viewport_u/2.0 - viewport_v/2.0;
+
+        let pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
+        let pixel00_loc = pixel00_loc.to_point3();
+
+        // camera_width: OnceCell::from(camera_width),
+        Self {
+            // aspect_ratio, 
+            image_width, image_height, 
+            center, 
+            // vfov, 
+            pixel00_loc, pixel_delta_u, pixel_delta_v,
+            // lookfrom, 
+            // lookat, 
+            // vup,
+            // u, v, w
         }
     }
 
@@ -72,17 +94,14 @@ impl RtCamera {
     /// 
     /// (x: column, y: row) : pixel position
     pub fn get_camera_ray(&self, x: u16, y: u16, px: f32, py: f32) -> RtRay {
-        // Get a point on the viewport
-        // Start with top left
-        let mut viewport_point = self.top_left();
-        // Offset with the given pixel
-        viewport_point.x += (self.aspect_ratio / *self.camera_width()  as f32) * (x as f32 + px);
-        viewport_point.y += (1.0               / *self.camera_height() as f32) * (y as f32 + py);
-        let direction = viewport_point - self.center;
+        let pixel_center = self.pixel00_loc + 
+            ((x as f32 + px) * self.pixel_delta_u) + 
+            ((y as f32 + py) * self.pixel_delta_v);
+        let ray_direction = pixel_center - self.center;
         // Create shader globals
         let sg = RtShaderGlobals::default(x, y);
         // Create the ray from the center
-        let mut ray = RtRay::new(&sg, self.center, direction.normalize());
+        let mut ray = RtRay::new(&sg, self.center, ray_direction.normalize());
         ray.bounces = 0;
         ray
     }
@@ -148,15 +167,15 @@ impl<'a> Iterator for RtCameraRayIterator<'a> {
     type Item = RtPixel;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.current_x >= *self.camera.camera_width() ||
-           self.current_y >= *self.camera.camera_height() {
+        if self.current_x >= self.camera.image_width ||
+           self.current_y >= self.camera.image_height {
             return None
         }
 
         let pixel = RtPixel::new(self.current_x, self.current_y);
 
         // Compute next pixel position
-        if self.current_x >= self.camera.camera_width() - 1 {
+        if self.current_x >= self.camera.image_width - 1 {
             // Pick first pixel of the bottom line
             self.current_x  = 0;
             self.current_y += 1;

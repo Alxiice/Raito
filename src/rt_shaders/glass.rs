@@ -1,3 +1,4 @@
+use crate::random_float;
 /// =====================================================
 ///                    Raito Render
 /// 
@@ -37,6 +38,12 @@ fn random_unit_vector() -> RtVec3 {
     vec
 }
 
+fn reflectance(cosine: f32, ior: f32) -> f32 {
+    // Use Schlick's approximation for reflectance.
+    let r0 = (1.0 - ior) / (1.0 + ior);
+    r0 + (1.0 - r0*r0) * (1.0 - cosine).powf(5.0)
+}
+
 // ========================================
 //  Shader implementation
 // ========================================
@@ -53,14 +60,16 @@ impl RtShader for Glass {
         let eta = if front_face { 1.0 / self.ior } else { self.ior };
         let Nf = if front_face { sg.N } else { -sg.N };
 
-        let cos_theta: f32 = RtVec3::dot(-ray.dir.normalize(), Nf).min(1.0);
+        let unit_direction = sg.ray_dir;
+        let cos_theta: f32 = RtVec3::dot(-unit_direction, Nf).min(1.0);
         let sin_theta: f32 = (1.0 - cos_theta * cos_theta).sqrt();
+
         let tir = (eta * sin_theta) > 1.0;
 
-        if tir {
-            RtReflectRay(&mut ray, &sg.ray_dir, &Nf, &sg);
+        if tir || reflectance(cos_theta, eta) > random_float() {
+            RtReflectRay(&mut ray, &unit_direction, &Nf, &sg);
         } else {
-            RtRefractRay(&mut ray, &sg.ray_dir, &Nf, eta, &sg);
+            RtRefractRay(&mut ray, &unit_direction, &Nf, eta, &sg);
         }
 
         // Avoid self intersections
