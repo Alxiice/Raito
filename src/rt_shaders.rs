@@ -11,11 +11,13 @@ pub mod stateVector;
 pub mod lambert;
 pub mod lightShader;
 pub mod metal;
+pub mod glass;
 
 use staticColor::StaticColorShader;
 use stateVector::StateVectorShader;
 use lambert::LambertShader;
 use metal::Metal;
+use glass::Glass;
 use lightShader::LightShader;
 
 use crate::RtRGBA;
@@ -23,7 +25,9 @@ use crate::RtRGBA;
 pub enum RtSurfaceShadersTypes {
     StaticColor(StaticColorShader),
     Normal(StateVectorShader),
-    Lambert(LambertShader)
+    Lambert(LambertShader),
+    Glass(Glass),
+    Metal(Metal),
 }
 
 pub enum RtLightShadersTypes {

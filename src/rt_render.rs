@@ -34,9 +34,16 @@ pub fn RtMakeRay(sg: &RtShaderGlobals, _raytype: RtRayType, dir: RtVec3, _maxdis
 
 /// Launch a ray on a scene
 pub fn RtReflectRay(ray: &mut RtRay, wo: &RtVec3, normal: &RtVec3, _sg: &RtShaderGlobals) {
-    ray.dir = *wo - 2.0 * RtVec3::dot(*wo, *normal) * *normal;
+    ray.dir = (*wo - 2.0 * RtVec3::dot(*wo, *normal) * *normal).normalize();
 }
 
+// TODO : fix to avoid front facing normal ?
+pub fn RtRefractRay(ray: &mut RtRay, wo: &RtVec3, normal: &RtVec3, eta: f32, _sg: &RtShaderGlobals) {
+    let cos_theta = RtVec3::dot(-*wo, *normal).min(1.0);
+    let r_out_perp: RtVec3 = eta * (*wo + cos_theta * *normal);
+    let r_out_parallel: RtVec3 = - (1.0 - r_out_perp.length_squared()).abs().sqrt() * *normal;
+    ray.dir = (r_out_perp + r_out_parallel).normalize();
+}
 
 // ========================================
 //  Launching rays
@@ -44,7 +51,7 @@ pub fn RtReflectRay(ray: &mut RtRay, wo: &RtVec3, normal: &RtVec3, _sg: &RtShade
 
 /// Launch a ray on a scene
 pub fn RtTraceRay(scene: &RtScene, ray: &RtRay) -> Option<RtHit> {
-    if ray.bounces >= 3 {
+    if ray.bounces >= 5 {
         return None
     }
 

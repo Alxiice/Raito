@@ -328,6 +328,10 @@ impl RtVec3 {
         Self { x, y, z }
     }
 
+    pub fn to_point3(self) -> RtPoint3 {
+        RtPoint3 { x: self.x, y: self.y, z: self.z }
+    }
+
     pub fn length_squared(&self) -> f32 {
         self.x * self.x + self.y * self.y + self.z * self.z
     }

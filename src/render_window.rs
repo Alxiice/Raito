@@ -20,6 +20,7 @@ use raito::rt_objects::rt_lights::RtPointLight;
 use raito::rt_shaders::stateVector::StateVectorShader;
 use raito::rt_shaders::lambert::LambertShader;
 use raito::rt_shaders::metal::Metal;
+use raito::rt_shaders::glass::Glass;
 use raito::rt_shaders::lightShader::LightShader;
 use raito::rt_scene::RtScene;
 use raito::rt_render_output::RtRenderResult;
@@ -243,9 +244,8 @@ impl RaitoRenderApp {
         scene.add_shape(Box::new(RtSphere { 
             object_params: ObjectParams::new(
                 String::from(""), String::from(""),
-                Box::new(Metal {
-                    color: RtRGBA::from_rgb(0.8, 0.8, 0.8),
-                    fuzz: 0.3
+                Box::new(Glass {
+                    ior: 1.0 / 1.2
                 })
             ),
             center: RtPoint3::new(-1.0, 0.0, -1.0),
