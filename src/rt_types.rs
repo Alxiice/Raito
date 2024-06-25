@@ -13,6 +13,8 @@ use std::ops::Neg;
 
 use egui::Color32;
 
+use crate::{random_float, random_float_range};
+
 // ========================================
 //  Constants
 // ========================================
@@ -49,6 +51,24 @@ impl RtRGBA {
     pub fn new(r: f32, g: f32, b: f32) -> Self {
         Self {
             r, g, b, a: 1.0
+        }
+    }
+
+    pub fn random() -> Self {
+        Self {
+            r: random_float(),
+            g: random_float(),
+            b: random_float(),
+            a: 1.0
+        }
+    }
+    
+    pub fn random_range(a: f32, b: f32) -> Self {
+        Self {
+            r: random_float_range(a, b),
+            g: random_float_range(a, b),
+            b: random_float_range(a, b),
+            a: 1.0
         }
     }
 

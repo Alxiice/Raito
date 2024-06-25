@@ -1,3 +1,4 @@
+use eframe::glow::Shader;
 /// =====================================================
 ///                    Raito Render
 /// 
@@ -9,7 +10,7 @@
 use egui::*;
 use log::*;
 
-use raito::{RtRenderScene, RT_DEFAULT_WINDOW_HEIGHT, RT_DEFAULT_WINDOW_WIDTH};
+use raito::{random_float, random_float_range, RtRenderScene, RT_DEFAULT_WINDOW_HEIGHT, RT_DEFAULT_WINDOW_WIDTH};
 const DEFAULT_COLOR: Color32 = Color32::from_rgb(0, 0, 0);
 use raito::rt_types::*;
 use crate::render_window_params::*;
@@ -17,6 +18,7 @@ use raito::rt_camera::RtCamera;
 use raito::rt_objects::rt_object_base::ObjectParams;
 use raito::rt_objects::rt_geometries::RtSphere;
 use raito::rt_objects::rt_lights::RtPointLight;
+use raito::rt_shaders::rt_shader_base::RtShader;
 use raito::rt_shaders::stateVector::StateVectorShader;
 use raito::rt_shaders::lambert::LambertShader;
 use raito::rt_shaders::metal::Metal;
@@ -69,6 +71,92 @@ impl RaitoRenderApp {
         }
     }
 
+    pub fn setup_scene(&self, camera: RtCamera) -> RtScene {
+        let mut scene = RtScene::new(camera);
+
+        // Ground
+        scene.add_shape(Box::new(RtSphere { 
+            object_params: ObjectParams::new(
+                String::from(""), String::from(""),
+                Box::new(LambertShader {
+                    color: RtRGBA::from_rgb(0.5, 0.5, 0.5)
+                })
+            ),
+            center: RtPoint3::new(0.0, -1000.0, 0.0),
+            radius: 1000.0
+        }));
+
+        // Mini spheres
+        for a in -11..11 {
+            for b in -11..11 {
+                let choose_mat = random_float();
+                let center = RtPoint3::new(a as f32 + 0.9*random_float(), 0.2, b as f32 + 0.9*random_float());
+                if (center - RtPoint3::new(4.0, 0.2, 0.0)).length() > 0.9 {
+                    let mut sphere_material: Box<dyn RtShader>;
+                    if choose_mat < 0.8 { // diffuse
+                        sphere_material = Box::new(LambertShader {
+                            color: RtRGBA::random() * RtRGBA::random()
+                        });
+                    } else if choose_mat < 0.95 { // metal
+                        sphere_material = Box::new(Metal {
+                            color: RtRGBA::random_range(0.5, 1.0),
+                            fuzz: random_float_range(0.0, 0.5)
+                        });
+                    } else { // glass
+                        sphere_material = Box::new(Glass {
+                            ior: 1.5
+                        });
+                    }
+                    // Create new sphere
+                    scene.add_shape(Box::new(RtSphere { 
+                        object_params: ObjectParams::new(
+                            String::from(""), String::from(""), 
+                            sphere_material),
+                        center,
+                        radius: 0.2
+                    }));
+                }
+            }
+        }
+
+        // Sphere left
+        scene.add_shape(Box::new(RtSphere { 
+            object_params: ObjectParams::new(
+                String::from(""), String::from(""),
+                Box::new(LambertShader {
+                    color: RtRGBA::from_rgb(0.4, 0.2, 0.1)
+                })
+            ),
+            center: RtPoint3::new(-4.0, 1.0, 0.0),
+            radius: 1.0
+        }));
+        // Sphere center
+        scene.add_shape(Box::new(RtSphere { 
+            object_params: ObjectParams::new(
+                String::from(""), String::from(""),
+                Box::new(Glass {
+                    ior: 1.5
+                })
+            ),
+            center: RtPoint3::new(0.0, 1.0, 0.0),
+            radius: 1.0
+        }));
+        // Sphere right
+        scene.add_shape(Box::new(RtSphere { 
+            object_params: ObjectParams::new(
+                String::from(""), String::from(""),
+                Box::new(Metal {
+                    color: RtRGBA::from_rgb(0.7, 0.6, 0.5),
+                    fuzz: 0.0
+                })
+            ),
+            center: RtPoint3::new(4.0, 1.0, 0.0),
+            radius: 1.0
+        }));
+
+        scene
+    }
+
     fn update_params(&mut self) {
         // TODO
         // Instead of recreating the scene
@@ -77,72 +165,15 @@ impl RaitoRenderApp {
         // objects & parameters so that we don't update everything
         // on the object
 
+        // ===== Create camera =====
         let camera = RtCamera::new(
             1.0, 400, self.parameters.camera_fov, 
-            RtPoint3::new(-2.0, 2.0, 1.0), // self.parameters.camera_position,
-            RtPoint3::new(0.0, 0.0, -1.0), 
+            self.parameters.camera_position,
+            RtPoint3::new(0.0, 0.0, 0.0), 
             RtVec3::new(0.0, 1.0, 0.0)
         );
-        // camera.camera_fov = 140.0;
-        let mut scene = RtScene::new(camera);
-
-        // ===== Add geomtry =====
-        // Ground
-        scene.add_shape(Box::new(RtSphere { 
-            object_params: ObjectParams::new(
-                String::from(""), String::from(""),
-                Box::new(LambertShader {
-                    color: RtRGBA::from_rgb(0.8, 0.8, 0.0)
-                })
-            ),
-            center: RtPoint3::new(0.0, -100.5, -1.0),
-            radius: 100.0
-        }));
-        // Sphere center
-        scene.add_shape(Box::new(RtSphere { 
-            object_params: ObjectParams::new(
-                String::from(""), String::from(""),
-                Box::new(LambertShader {
-                    color: RtRGBA::from_rgb(0.1, 0.2, 0.5)
-                })
-            ),
-            center: RtPoint3::new(0.0, 0.0, -1.2),
-            radius: 0.5
-        }));
-        // Sphere left
-        scene.add_shape(Box::new(RtSphere { 
-            object_params: ObjectParams::new(
-                String::from(""), String::from(""),
-                Box::new(Glass {
-                    ior: 1.5
-                })
-            ),
-            center: RtPoint3::new(-1.0, 0.0, -1.0),
-            radius: 0.5
-        }));
-        // Sphere bubble
-        scene.add_shape(Box::new(RtSphere { 
-            object_params: ObjectParams::new(
-                String::from(""), String::from(""),
-                Box::new(Glass {
-                    ior: 1.0 / 1.5
-                })
-            ),
-            center: RtPoint3::new(-1.0, 0.0, -1.0),
-            radius: 0.4
-        }));
-        // Sphere right
-        scene.add_shape(Box::new(RtSphere { 
-            object_params: ObjectParams::new(
-                String::from(""), String::from(""),
-                Box::new(Metal {
-                    color: RtRGBA::from_rgb(0.8, 0.6, 0.2),
-                    fuzz: 1.0
-                })
-            ),
-            center: RtPoint3::new(1.0, 0.0, -1.0),
-            radius: 0.5
-        }));
+        // ===== Add geometry =====
+        let scene = self.setup_scene(camera);
 
         self.scene = Some(scene);
     }

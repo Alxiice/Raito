@@ -59,8 +59,8 @@ impl Default for RtParameters {
             ipr_enabled: false, 
             // Camera params
             // camera_fov: 47.0,
-            camera_fov: 90.0,
-            camera_position: RtPoint3::new(0.0, 0.0, 0.0),
+            camera_fov: 20.0,
+            camera_position: RtPoint3::new(13.0, 2.0, 3.0),
             camera_rotation: RtPoint3::new(0.0, 0.0, 0.0),
             // Light params
             light_position: RtPoint3::new(0.0, 2.0, 0.0),
