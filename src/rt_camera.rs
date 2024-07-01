@@ -5,34 +5,21 @@
 ///   Defines a camera
 /// =====================================================
 
-use std::cell::OnceCell;
-
 use crate::rt_types::*;
 use crate::rt_ray::*;
 use crate::rt_shader_globals::*;
 use crate::rt_sampler::*;
 
-pub const RT_MAX_BOUNCES: u8 = 2;
-pub const NB_SUBPIXELS: u8 = 3;
-pub const INV_NB_SUBPIXELS: f32 = 1.0 / (NB_SUBPIXELS as f32);
-pub const SUBPX_SEED: u64 = 1;
-
 /// Describes a camera
 /// 
 /// Right handed system
 pub struct RtCamera {
-    // pub aspect_ratio: f32,
-    pub image_width : u16, // OnceCell<u16>
+    pub image_width : u16, 
     pub image_height: u16,
-    // pub lookfrom: RtPoint3,
     center: RtPoint3,
     pixel00_loc: RtPoint3,
     pixel_delta_u: RtVec3,
     pixel_delta_v: RtVec3,
-    // pub vfov: f32,
-    // lookat: RtPoint3,
-    // vup: RtVec3,
-    // u: RtVec3, v: RtVec3, w: RtVec3,
 }
 
 fn degrees_to_radians(degrees: f32) -> f32 {
@@ -74,17 +61,9 @@ impl RtCamera {
         let pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
         let pixel00_loc = pixel00_loc.to_point3();
 
-        // camera_width: OnceCell::from(camera_width),
         Self {
-            // aspect_ratio, 
-            image_width, image_height, 
-            center, 
-            // vfov, 
+            image_width, image_height, center, 
             pixel00_loc, pixel_delta_u, pixel_delta_v,
-            // lookfrom, 
-            // lookat, 
-            // vup,
-            // u, v, w
         }
     }
 

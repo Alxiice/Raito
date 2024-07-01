@@ -10,7 +10,7 @@ use eframe::glow::Shader;
 use egui::*;
 use log::*;
 
-use raito::{random_float, random_float_range, RtRenderScene, RT_DEFAULT_WINDOW_HEIGHT, RT_DEFAULT_WINDOW_WIDTH};
+use raito::{random_float, random_float_range, RtRenderScene, RtRenderSettings, RT_DEFAULT_WINDOW_HEIGHT, RT_DEFAULT_WINDOW_WIDTH};
 const DEFAULT_COLOR: Color32 = Color32::from_rgb(0, 0, 0);
 use raito::rt_types::*;
 use crate::render_window_params::*;
@@ -30,8 +30,8 @@ use raito::rt_render_output::RtRenderResult;
 //  will disappear
 // ========================================
 
-pub fn get_default_scene_0(camera: RtCamera) -> RtScene {
-    let mut scene = RtScene::new(camera);
+pub fn get_default_scene_0(settings: RtRenderSettings, camera: RtCamera) -> RtScene {
+    let mut scene = RtScene::new(settings, camera);
 
     // Ground
     scene.add_shape(Box::new(RtSphere { 
@@ -116,8 +116,8 @@ pub fn get_default_scene_0(camera: RtCamera) -> RtScene {
     scene
 }
 
-pub fn get_default_scene_1(camera: RtCamera) -> RtScene {
-    let mut scene = RtScene::new(camera);
+pub fn get_default_scene_1(settings: RtRenderSettings, camera: RtCamera) -> RtScene {
+    let mut scene = RtScene::new(settings, camera);
 
     // Ground
     scene.add_shape(Box::new(RtSphere { 
@@ -218,23 +218,17 @@ impl RaitoRenderApp {
     }
 
     pub fn setup_scene(&mut self) {
+        let settings = RtRenderSettings::new(
+            self.parameters.render_spp, self.parameters.max_bounces);
         let camera = RtCamera::new(
             1.0, 400, self.parameters.camera_fov, 
-            self.parameters.camera_position,
-            RtPoint3::new(0.0, 0.0, 0.0), 
-            RtVec3::new(0.0, 1.0, 0.0)
-        );
-        self.scene = Some(get_default_scene_1(camera));
+            self.parameters.look_from,
+            self.parameters.look_at,
+            RtVec3::new(0.0, 1.0, 0.0));
+        self.scene = Some(get_default_scene_1(settings, camera));
     }
 
     fn update_params(&mut self) {
-        // TODO
-        // Instead of recreating the scene
-        // Use object IDs to update values
-        // Also try to be smart and keep tracked on updated 
-        // objects & parameters so that we don't update everything
-        // on the object
-
         let scene = self.scene.as_mut();
         if scene.is_none() {
             // Panic because we shouldn't get here
@@ -242,15 +236,21 @@ impl RaitoRenderApp {
             panic!("No scene to update !");
         }
 
-        // ===== Create camera =====
+        // Settings
+        let settings = RtRenderSettings::new(
+            self.parameters.render_spp, self.parameters.max_bounces);
+            scene.unwrap().set_settings(settings);
+
+        // Camera
         let camera = RtCamera::new(
             1.0, 400, self.parameters.camera_fov, 
-            self.parameters.camera_position,
+            self.parameters.look_from,
             RtPoint3::new(0.0, 0.0, 0.0), 
-            RtVec3::new(0.0, 1.0, 0.0)
-        );
-
+            RtVec3::new(0.0, 1.0, 0.0));
+        let scene = self.scene.as_mut();
         scene.unwrap().set_camera(camera);
+
+        // TODO : update other things ?
     }
 
     fn render(&mut self) -> bool {

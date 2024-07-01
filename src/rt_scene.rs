@@ -16,27 +16,53 @@ use crate::rt_objects::rt_object_base::*;
 
 
 // ========================================
+//  Render settings
+// ========================================
+
+pub struct RtRenderSettings {
+    pub render_spp: u8,
+    pub max_bounces: u8,
+}
+
+impl RtRenderSettings {
+    pub fn new(render_spp: u8, max_bounces: u8) -> Self {
+        Self { render_spp, max_bounces }
+    }
+
+    pub fn update(&mut self, render_spp: u8, max_bounces: u8) {
+        self.render_spp = render_spp;
+        self.max_bounces = max_bounces;
+    }
+}
+
+
+// ========================================
 //  RtScene is the scene object
 //  that can be passed everywhere and 
 //  used for intersections
 // ========================================
 
 pub struct RtScene {
+    pub settings: RtRenderSettings,
     camera: RtCamera,
     shapes: RtObjectList,
     lights: RtObjectList,
 }
 
 impl RtScene {
-    pub fn new(camera: RtCamera) -> Self {
+    pub fn new(settings: RtRenderSettings, camera: RtCamera) -> Self {
         Self {
-            camera,
+            settings, camera,
             shapes: RtObjectList::new(),
             lights: RtObjectList::new(),
         }
     }
     
     // === SETTERS ===
+
+    pub fn set_settings(&mut self, settings: RtRenderSettings) {
+        self.settings = settings;
+    }
 
     pub fn set_camera(&mut self, camera: RtCamera) {
         self.camera = camera;

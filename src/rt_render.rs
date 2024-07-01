@@ -9,7 +9,6 @@ use std::f32::NAN;
 
 use crate::rt_types::*;
 use crate::rt_camera::*;
-use crate::rt_camera::RT_MAX_BOUNCES;
 use crate::rt_ray::*;
 use crate::rt_shader_globals::*;
 use crate::rt_scene::*;
@@ -52,7 +51,7 @@ pub fn RtRefractRay(ray: &mut RtRay, wo: &RtVec3, normal: &RtVec3, eta: f32, _sg
 
 /// Launch a ray on a scene
 pub fn RtTraceRay(scene: &RtScene, ray: &RtRay) -> Option<RtHit> {
-    if ray.bounces >= RT_MAX_BOUNCES {
+    if ray.bounces >= scene.settings.max_bounces {
         return None
     }
 
@@ -169,22 +168,22 @@ pub fn RtRenderScene(scene: &RtScene, result: &mut RtRenderResult) {
     // We want to be able to change that, move and rotate the camera
     // We need to implement world and camera space
 
-    // let mut camera = RtCamera::new(result.width as u16, 1.0);
-    // camera.camera_fov = scene.get_camera().camera_fov;
+    let inv_nb_spp: f32 = 1.0 / (scene.settings.render_spp as f32);
+
     let cam_rays = RtCameraRayIterator::new(scene.get_camera());
     for camera_ray in cam_rays {
         let mut pixelColor = RtRGBA::BLACK;
-        for _ in 0..NB_SUBPIXELS {
+        for _ in 0..scene.settings.render_spp {
             let ray = camera_ray.get_ray(scene.get_camera());
             let hit = RtTraceRay(scene, &ray);
             if hit.is_some() {
                 let hitResult = hit.unwrap();
-                pixelColor += hitResult.colorOutput * INV_NB_SUBPIXELS;
+                pixelColor += hitResult.colorOutput * inv_nb_spp;
             } else {
                 // let a = 0.5 * ray.dir.y + 1.0;
                 // let skyColor = (1.0 - a) * RtRGBA::WHITE + a * RtRGBA::from_rgb(0.5, 0.7, 1.0);
-                // pixelColor += skyColor * INV_NB_SUBPIXELS;
-                pixelColor += RtRGBA::ERRCOLOR  * INV_NB_SUBPIXELS;
+                // pixelColor += skyColor * inv_nb_spp;
+                pixelColor += RtRGBA::ERRCOLOR  * inv_nb_spp;
             }
         }
         // panic!("Pixel : {} {}", camera_ray.x(), camera_ray.y());
