@@ -11,15 +11,12 @@ use std::io::Read;
 use quick_xml::Reader;
 use quick_xml::events::{Event, BytesStart};
 
-use crate::rt_types::*;
 use crate::rt_camera::RtCamera;
-use crate::rt_objects::*;
 use crate::rt_objects::rt_object_base::*;
-use crate::rt_shaders::*;
 
 
 // ========================================
-//  RtRenderScene is the scene object
+//  RtScene is the scene object
 //  that can be passed everywhere and 
 //  used for intersections
 // ========================================
@@ -38,6 +35,22 @@ impl RtScene {
             lights: RtObjectList::new(),
         }
     }
+    
+    // === SETTERS ===
+
+    pub fn set_camera(&mut self, camera: RtCamera) {
+        self.camera = camera;
+    }
+
+    pub fn add_shape(&mut self, shape: Box<dyn RtObject>) {
+        self.shapes.add_object(shape)
+    }
+
+    pub fn add_light(&mut self, light: Box<dyn RtObject>) {
+        self.lights.add_object(light)
+    }
+
+    // === GETTERS ===
 
     pub fn get_camera(&self) -> &RtCamera {
         &self.camera
@@ -49,14 +62,6 @@ impl RtScene {
 
     pub fn list_lights(&self) -> &Vec<Box<dyn RtObject>> {
         self.lights.list_objects()
-    }
-
-    pub fn add_shape(&mut self, shape: Box<dyn RtObject>) {
-        self.shapes.add_object(shape)
-    }
-
-    pub fn add_light(&mut self, light: Box<dyn RtObject>) {
-        self.lights.add_object(light)
     }
 }
 
