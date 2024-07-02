@@ -8,10 +8,13 @@ use eframe::glow::Shader;
 /// =====================================================
 
 use egui::*;
+use std::path::PathBuf;
+use eframe::egui;
+use egui_file_dialog::{FileDialog, DialogState};
+
 use log::*;
 
 use raito::{random_float, random_float_range, RtRenderScene, RtRenderSettings, RT_DEFAULT_WINDOW_HEIGHT, RT_DEFAULT_WINDOW_WIDTH};
-const DEFAULT_COLOR: Color32 = Color32::from_rgb(0, 0, 0);
 use raito::rt_types::*;
 use crate::render_window_params::*;
 use raito::rt_camera::RtCamera;
@@ -23,6 +26,8 @@ use raito::rt_shaders::metal::Metal;
 use raito::rt_shaders::glass::Glass;
 use raito::rt_scene::RtScene;
 use raito::rt_render_output::RtRenderResult;
+
+const DEFAULT_COLOR: Color32 = Color32::from_rgb(0, 0, 0);
 
 
 // ========================================
@@ -174,6 +179,14 @@ pub fn get_default_scene_1(settings: RtRenderSettings, camera: RtCamera) -> RtSc
 //  Create GUI
 // ========================================
 
+#[derive(Debug, PartialEq, Eq)]
+enum OpeningFileStatus {
+    None,
+    ToOpen,
+    ChoosingFile,
+    FileChosen
+}
+
 /// Create app structure
 pub struct RaitoRenderApp {
     // Parameters
@@ -183,6 +196,11 @@ pub struct RaitoRenderApp {
     result: RtRenderResult,
     // Displayed image
     color_image: ColorImage,
+
+    // file dialog
+    opening_file_status: OpeningFileStatus,
+    file_dialog: FileDialog,
+    selected_file: Option<PathBuf>,
 }
 
 impl Default for RaitoRenderApp {
@@ -195,6 +213,14 @@ impl Default for RaitoRenderApp {
                 RT_DEFAULT_WINDOW_WIDTH, RT_DEFAULT_WINDOW_HEIGHT),
             color_image: ColorImage::new(
                 [RT_DEFAULT_WINDOW_WIDTH, RT_DEFAULT_WINDOW_HEIGHT], DEFAULT_COLOR),
+            opening_file_status: OpeningFileStatus::None,
+            file_dialog: FileDialog::new()
+                .resizable(false)
+                .movable(false)
+                .title_bar(false)
+                .show_top_panel(false)
+                .show_new_folder_button(false),
+            selected_file: None,
         }
     }
 }
@@ -226,6 +252,26 @@ impl RaitoRenderApp {
             self.parameters.look_at,
             RtVec3::new(0.0, 1.0, 0.0));
         self.scene = Some(get_default_scene_1(settings, camera));
+    }
+
+    pub fn open_scene(&mut self) -> bool {
+        if self.selected_file.is_none() {
+            error!("Could not find scene to open");
+            return false;
+        }
+        let path = self.selected_file.as_ref().unwrap();
+        info!("Opening scene : {}", path.display());
+        // TODO
+        let settings = RtRenderSettings::new(
+            self.parameters.render_spp, self.parameters.max_bounces);
+        let camera = RtCamera::new(
+            1.0, 400, self.parameters.camera_fov, 
+            self.parameters.look_from,
+            self.parameters.look_at,
+            RtVec3::new(0.0, 1.0, 0.0));
+        self.scene = Some(get_default_scene_0(settings, camera));
+        // END TODO
+        true
     }
 
     fn update_params(&mut self) {
@@ -269,10 +315,14 @@ impl RaitoRenderApp {
     /// Start the render
     pub fn launch_render(&mut self) {
         // Setup scene
-        info!("> Setup render scene");
-        let now = std::time::Instant::now();
-        self.setup_scene();
-        info!("> Finish setup of the render scene in {} sec", now.elapsed().as_secs_f64());
+        if self.scene.is_none() {
+            info!("> Setup render scene");
+            let now = std::time::Instant::now();
+            self.setup_scene();
+            info!("> Finish setup of the render scene in {} sec", now.elapsed().as_secs_f64());
+        } else {
+            self.update_params();
+        }
         
         // Launch render
         info!("Starting render");
@@ -295,6 +345,47 @@ impl RaitoRenderApp {
     }
 }
 
+fn main_ui(app: &mut RaitoRenderApp, ui: &mut Ui, ctx: &egui::Context) {
+    ui.horizontal(|ui| {
+        ui.vertical(|ui| {
+            ui.horizontal(|ui| {
+                let available_size = [(RT_DEFAULT_WINDOW_WIDTH as f32) / 2.0 - 4.0, 25.0];
+                let start_button = Button::new("Launch Render");
+                let ipr_button = if app.parameters.ipr_enabled {
+                    Button::new("Stop IPR").fill(Color32::from_rgb(0, 190, 0))
+                } else {
+                    Button::new("Start IPR")
+                };
+                if ui.add_sized(available_size, start_button).clicked() {
+                    app.launch_render();
+                };
+                if ui.add_sized(available_size, ipr_button).clicked() {
+                    app.toggle_ipr(ctx);
+                };
+            });
+
+            // Render view
+            // let now = std::time::Instant::now();
+            let img = ui.ctx().load_texture(
+                "renderview-img",
+                ImageData::from(app.color_image.clone()),
+                Default::default()
+            );
+            ui.add(egui::Image::new(&img));
+            // info!("Image display took : {} sec", now.elapsed().as_secs_f64());
+        });
+
+        // Parameters
+        let mut updated = false;
+        ui.vertical(|ui| {
+            setup_params_ui(ui, &mut app.parameters, &mut updated);
+        });
+        if updated && app.parameters.ipr_enabled {
+            app.update_params();
+            app.render();
+        }
+    });
+}
 
 impl eframe::App for RaitoRenderApp {
     fn clear_color(&self, _visuals: &egui::Visuals) -> [f32; 4] {
@@ -308,7 +399,10 @@ impl eframe::App for RaitoRenderApp {
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
                 ui.menu_button("File", |ui| {
-                    if ui.button("Quit").clicked() {
+                    if ui.button("Open Scene").clicked() {
+                        self.opening_file_status = OpeningFileStatus::ToOpen;
+                    }
+                    if ui.button("Exit").clicked() {
                         ctx.send_viewport_cmd(egui::ViewportCommand::Close);
                     }
                 });
@@ -318,43 +412,35 @@ impl eframe::App for RaitoRenderApp {
         });
 
         CentralPanel::default().show(ctx, |ui| {
-            ui.horizontal(|ui| {
-                ui.vertical(|ui| {
-                    ui.horizontal(|ui| {
-                        let available_size = [(RT_DEFAULT_WINDOW_WIDTH as f32) / 2.0 - 4.0, 25.0];
-                        let start_button = Button::new("Launch Render");
-                        let ipr_button = if self.parameters.ipr_enabled {
-                            Button::new("Stop IPR").fill(Color32::from_rgb(0, 190, 0))
-                        } else {
-                            Button::new("Start IPR")
-                        };
-                        if ui.add_sized(available_size, start_button).clicked() {
-                            self.launch_render();
-                        };
-                        if ui.add_sized(available_size, ipr_button).clicked() {
-                            self.toggle_ipr(ctx);
-                        };
-                    });
-    
-                    // Render view
-                    let img = ui.ctx().load_texture(
-                        "renderview-img",
-                        ImageData::from(self.color_image.clone()),
-                        Default::default()
-                    );
-                    ui.add(egui::Image::new(&img));
-                });
-    
-                // Parameters
-                let mut updated = false;
-                ui.vertical(|ui| {
-                    setup_params_ui(ui, &mut self.parameters, &mut updated);
-                });
-                if updated && self.parameters.ipr_enabled {
-                    self.update_params();
-                    self.render();
+            if self.opening_file_status == OpeningFileStatus::None ||  
+               self.opening_file_status == OpeningFileStatus::FileChosen {
+                if self.opening_file_status == OpeningFileStatus::FileChosen {
+                    self.open_scene();
+                    self.opening_file_status = OpeningFileStatus::None;
                 }
-            });
+                main_ui(self, ui, ctx)
+            } else {
+                // TODO : This behaviour for the open scene is not great,
+                // I would prefer an external window.
+                // Other solution is to rewrite the explorer and integrate it 
+                // correctly inside the main window
+
+                if self.opening_file_status == OpeningFileStatus::ToOpen {
+                    self.file_dialog.select_file();
+                    self.opening_file_status = OpeningFileStatus::ChoosingFile;
+                }
+
+                if self.file_dialog.state() == DialogState::Cancelled || 
+                   self.file_dialog.state() == DialogState::Closed {
+                    self.opening_file_status = OpeningFileStatus::None;
+                }
+    
+                // Update the dialog and check if the user selected a file
+                if let Some(path) = self.file_dialog.update(ctx).selected() {
+                    self.selected_file = Some(path.to_path_buf());
+                    self.opening_file_status = OpeningFileStatus::FileChosen;
+                }
+            }
         });
     }
 }
