@@ -1,8 +1,9 @@
-#![warn(clippy::all, rust_2018_idioms)]
 #![allow(non_snake_case)]
+#![allow(unused)]
+
+#![warn(clippy::all, rust_2018_idioms)]
 // hide console window on Windows in release
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-
 /// =====================================================
 ///                    Raito Render
 /// 
@@ -30,6 +31,10 @@ pub struct RaitoArgs {
     /// Verbosity level
     #[arg(short, long, value_enum, default_value_t = RtLevel::Info)]
     log_level: RtLevel,
+    
+    /// Execute tests
+    #[arg(short, long)]
+    tests: bool,
 }
 
 /// Log levels
@@ -49,13 +54,20 @@ fn main() -> Result<(), eframe::Error> {
     env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
     info!("====================== RAITO RENDER ======================");
 
-    // rt_test();
+    if args.tests {
+        rt_test();
+        return Ok(());
+    }
 
     let native_options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
+            .with_title("Raito")
+            .with_title_shown(true)
             .with_inner_size([WINDOW_WIDTH, MIN_WINDOW_HEIGHT])
             .with_min_inner_size([WINDOW_WIDTH, MIN_WINDOW_HEIGHT])
             .with_max_inner_size([WINDOW_WIDTH, MAX_WINDOW_HEIGHT]),
+        // follow_system_theme: true,
+        default_theme: eframe::Theme::Dark,
         ..Default::default()
     };
     eframe::run_native(

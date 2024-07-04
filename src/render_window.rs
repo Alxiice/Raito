@@ -1,4 +1,3 @@
-use eframe::glow::Shader;
 /// =====================================================
 ///                    Raito Render
 /// 
@@ -25,6 +24,7 @@ use raito::rt_shaders::lambert::LambertShader;
 use raito::rt_shaders::metal::Metal;
 use raito::rt_shaders::glass::Glass;
 use raito::rt_scene::RtScene;
+use raito::rt_scene::open_xml_scene;
 use raito::rt_render_output::RtRenderResult;
 
 const DEFAULT_COLOR: Color32 = Color32::from_rgb(0, 0, 0);
@@ -184,7 +184,6 @@ enum OpeningFileStatus {
     None,
     ToOpen,
     ChoosingFile,
-    FileChosen
 }
 
 /// Create app structure
@@ -200,7 +199,6 @@ pub struct RaitoRenderApp {
     // file dialog
     opening_file_status: OpeningFileStatus,
     file_dialog: FileDialog,
-    selected_file: Option<PathBuf>,
 }
 
 impl Default for RaitoRenderApp {
@@ -220,16 +218,15 @@ impl Default for RaitoRenderApp {
                 .title_bar(false)
                 .show_top_panel(false)
                 .show_new_folder_button(false),
-            selected_file: None,
         }
     }
 }
 
 impl RaitoRenderApp {
     /// Called once before the first frame.
-    pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
+    pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
         // This is also where you can customize the look and feel of egui using
-        // `cc.egui_ctx.set_visuals` and `cc.egui_ctx.set_fonts`.
+        // `_cc.egui_ctx.set_visuals` and `_cc.egui_ctx.set_fonts`.
         Default::default()
     }
 
@@ -254,23 +251,18 @@ impl RaitoRenderApp {
         self.scene = Some(get_default_scene_1(settings, camera));
     }
 
-    pub fn open_scene(&mut self) -> bool {
-        if self.selected_file.is_none() {
-            error!("Could not find scene to open");
-            return false;
-        }
-        let path = self.selected_file.as_ref().unwrap();
-        info!("Opening scene : {}", path.display());
-        // TODO
-        let settings = RtRenderSettings::new(
-            self.parameters.render_spp, self.parameters.max_bounces);
-        let camera = RtCamera::new(
-            1.0, 400, self.parameters.camera_fov, 
-            self.parameters.look_from,
-            self.parameters.look_at,
-            RtVec3::new(0.0, 1.0, 0.0));
-        self.scene = Some(get_default_scene_0(settings, camera));
-        // END TODO
+    pub fn open_scene(&mut self, path: PathBuf) -> bool {
+        // let settings = RtRenderSettings::new(
+        //     self.parameters.render_spp, self.parameters.max_bounces);
+        // let camera = RtCamera::new(
+        //     1.0, 400, self.parameters.camera_fov, 
+        //     self.parameters.look_from,
+        //     self.parameters.look_at,
+        //     RtVec3::new(0.0, 1.0, 0.0));
+        let xml_scene = open_xml_scene(path.to_str().unwrap());
+        self.scene = xml_scene;
+        // Setup camera in parameters
+
         true
     }
 
@@ -316,10 +308,8 @@ impl RaitoRenderApp {
     pub fn launch_render(&mut self) {
         // Setup scene
         if self.scene.is_none() {
-            info!("> Setup render scene");
-            let now = std::time::Instant::now();
-            self.setup_scene();
-            info!("> Finish setup of the render scene in {} sec", now.elapsed().as_secs_f64());
+            error!("No scene loaded to render !");
+            return;
         } else {
             self.update_params();
         }
@@ -333,7 +323,7 @@ impl RaitoRenderApp {
     }
 
     /// Stops the render
-    pub fn toggle_ipr(&mut self, ctx: &egui::Context) {
+    pub fn toggle_ipr(&mut self) {
         if self.parameters.ipr_enabled {
             info!("> Stopping IPR");
             self.parameters.ipr_enabled = false;
@@ -360,7 +350,7 @@ fn main_ui(app: &mut RaitoRenderApp, ui: &mut Ui, ctx: &egui::Context) {
                     app.launch_render();
                 };
                 if ui.add_sized(available_size, ipr_button).clicked() {
-                    app.toggle_ipr(ctx);
+                    app.toggle_ipr();
                 };
             });
 
@@ -395,7 +385,6 @@ impl eframe::App for RaitoRenderApp {
 
     /// Called each time the UI needs repainting, which may be many times per second.
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
                 ui.menu_button("File", |ui| {
@@ -412,12 +401,7 @@ impl eframe::App for RaitoRenderApp {
         });
 
         CentralPanel::default().show(ctx, |ui| {
-            if self.opening_file_status == OpeningFileStatus::None ||  
-               self.opening_file_status == OpeningFileStatus::FileChosen {
-                if self.opening_file_status == OpeningFileStatus::FileChosen {
-                    self.open_scene();
-                    self.opening_file_status = OpeningFileStatus::None;
-                }
+            if self.opening_file_status == OpeningFileStatus::None {
                 main_ui(self, ui, ctx)
             } else {
                 // TODO : This behaviour for the open scene is not great,
@@ -437,8 +421,9 @@ impl eframe::App for RaitoRenderApp {
     
                 // Update the dialog and check if the user selected a file
                 if let Some(path) = self.file_dialog.update(ctx).selected() {
-                    self.selected_file = Some(path.to_path_buf());
-                    self.opening_file_status = OpeningFileStatus::FileChosen;
+                    let selected_file = path.to_path_buf();
+                    self.open_scene(selected_file);
+                    self.opening_file_status = OpeningFileStatus::None;
                 }
             }
         });

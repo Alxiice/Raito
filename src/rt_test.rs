@@ -1,4 +1,3 @@
-use log::{error, info, warn};
 /// =====================================================
 ///                    Raito Render
 /// 
@@ -6,6 +5,8 @@ use log::{error, info, warn};
 ///   Simple module where I can test new features
 ///   easily.
 /// =====================================================
+
+use log::info;
 
 use raito::*;
 
@@ -28,7 +29,5 @@ pub fn rt_test() {
     // test_sampler();
     let path = "/home/alice/Documents/PROJECTS/RaitoRender/Raito/tests/scenes/scene_000.xml";
     
-    read_xml(&path);
-
-    panic!("end");
+    open_xml_scene(path);
 }
