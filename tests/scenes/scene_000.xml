@@ -1,12 +1,14 @@
 <scene version="0.0.0">
     <!-- RENDER SETTINGS -->
     <render_settings>
-        <parameter type="string" name="render_spp" value="3"/> 
-        <parameter type="string" name="max_bounces" value="3"/> 
+        <parameter type="int" name="spp" value="3"/> 
+        <parameter type="int" name="max_bounces" value="3"/> 
     </render_settings>
     <!-- CAMERA -->
     <camera>
-        <parameter type="string" name="fov" value="60"/> 
+        <parameter type="float" name="v_fov" value="60"/> 
+        <parameter type="point" name="look_from" x="13.0" y="2.0" z="3.0"/>
+        <parameter type="point" name="look_at" x="0.0" y="0.0" z="0.0"/> 
     </camera>
     <!-- OBJECTS -->
     <!-- Declare shaders -->
@@ -15,20 +17,22 @@
     </shader>
     <!-- Declare geometries -->
     <shape type="sphere">
-        <parameter type="shader" value="surface0"/>
+        <parameter type="node" name="shader" id="surface0"/>
         <parameter type="float" name="radius" value="1.0"/>
         <parameter type="vec3" name="center" x="0.0" y="0.0" z="-5.0"/>
     </shape>
     <!-- LIGHTS -->
     <!-- Declare shaders -->
+    <!-- 
     <shader type="light" name="light0">
-        <param type="rgb" name="color" r="1.0" g="0.7" b="0.7"/> 
-        <param type="float" name="intensity" value="1.0"/> 
+        <parameter type="rgb" name="color" r="1.0" g="0.7" b="0.7"/> 
+        <parameter type="float" name="intensity" value="1.0"/> 
     </shader>
+     -->
     <!-- Declare lights -->
     <!-- 
     <light type="point_light">
-        <parameter type="shader" value="light0"/>
+        <parameter type="node" name="shader" id="light0"/>
         <parameter type="float" name="radius" value="1.0"/>
         <parameter type="vec3" name="center" x="1.0" y="1.0" z="-4.0"/>
     </light>
