@@ -1,4 +1,3 @@
-use crate::random_float;
 /// =====================================================
 ///                    Raito Render
 /// 
@@ -12,6 +11,7 @@ use crate::rt_types::*;
 use crate::rt_ray::*;
 use crate::rt_scene::*;
 use crate::rt_render::*;
+use crate::random_float;
 
 const MAX_RAY_LENGTH: f32 = 10000.0;
 const NB_SAMPLES: u8 = 10;
@@ -20,6 +20,7 @@ const NB_SAMPLES: u8 = 10;
 //  Shader structure
 // ========================================
 
+#[derive(Clone, Debug)]
 pub struct Glass {
     pub ior: f32
 }
@@ -49,6 +50,10 @@ fn reflectance(cosine: f32, ior: f32) -> f32 {
 // ========================================
 
 impl RtShader for Glass {
+    fn clone_dyn(&self) -> Box<dyn RtShader> {
+        Box::new(self.clone())
+    }
+
     fn evaluate(&self, scene: &RtScene, sg: &RtShaderGlobals) -> RtRGBA {
         // Result
         let mut out_color = RtRGBA::BLACK;

@@ -19,6 +19,7 @@ const NB_SAMPLES: u8 = 1;
 //  Shader structure
 // ========================================
 
+#[derive(Clone, Debug)]
 pub struct LambertShader {
     pub color: RtRGBA
 }
@@ -44,6 +45,10 @@ fn sample_in_hemisphere(n: RtVec3) -> RtVec3 {
 // ========================================
 
 impl RtShader for LambertShader {
+    fn clone_dyn(&self) -> Box<dyn RtShader> {
+        Box::new(self.clone())
+    }
+    
     fn evaluate(&self, scene: &RtScene, sg: &RtShaderGlobals) -> RtRGBA {
         // Result
         let mut out_color = RtRGBA::BLACK;

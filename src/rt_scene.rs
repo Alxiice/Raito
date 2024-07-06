@@ -15,11 +15,12 @@ use std::any::{Any, TypeId};
 use itertools::Itertools;
 use quick_xml::Reader;
 use quick_xml::events::{Event, BytesStart};
-use log::{info, error};
+use log::{debug, error, info, warn};
 
 use crate::rt_camera::RtCamera;
 use crate::rt_objects::rt_object_base::*;
 use crate::rt_shaders::rt_shader_base::RtShader;
+use crate::rt_shaders::DEFAULT_SHADER;
 use crate::{RtPoint3, RtRGBA, RtVec3};
 
 // TODO : for the placeholder geometry !
@@ -151,6 +152,22 @@ impl XMLParam {
         parsed_value
     }
 
+    fn get_id(&self) -> Result<String, String> {
+        if self.param_type != "node" {
+            Err(format!("Parameter type is {}, not node", self.param_type))
+        } else {
+            Ok(self.extract_param_value("id", TypeId::of::<String>()))
+        }
+    }
+    
+    fn get_string(&self) -> Result<String, String> {
+        if self.param_type != "string" {
+            Err(format!("Parameter type is {}, not string", self.param_type))
+        } else {
+            Ok(self.extract_param_value("value", TypeId::of::<String>()))
+        }
+    }
+
     fn get_u8(&self) -> Result<u8, String> {
         if self.param_type != "int" {
             Err(format!("Parameter type is {}, not int", self.param_type))
@@ -259,6 +276,87 @@ impl XMLSceneElement {
     fn add_parameter(&mut self, parameter: XMLParam) {
         self.parameters.push(parameter);
     }
+
+    fn get_parameter(&self, parameter: &str) -> Option<&XMLParam> {
+        for p in &self.parameters {
+            if p.param_name == parameter {
+                return Some(p);
+            }
+        }
+        None
+    }
+
+    fn get_linked_parameter_id(&self, parameter: &str) -> Result<String, String> {
+        for p in &self.parameters {
+            if p.param_name == parameter {
+                return p.get_id();
+            }
+        }
+        return Err(String::from("No parameter named {parameter}"));
+    }
+
+    fn get_string_parameter(&self, parameter: &str) -> Result<String, String> {
+        for p in &self.parameters {
+            if p.param_name == parameter {
+                return p.get_string();
+            }
+        }
+        return Err(String::from("No parameter named {parameter}"));
+    }
+    
+    fn get_u8_parameter(&self, parameter: &str) -> Result<u8, String> {
+        for p in &self.parameters {
+            if p.param_name == parameter {
+                return p.get_u8();
+            }
+        }
+        return Err(String::from("No parameter named {parameter}"));
+    }
+
+    fn get_u16_parameter(&self, parameter: &str) -> Result<u16, String> {
+        for p in &self.parameters {
+            if p.param_name == parameter {
+                return p.get_u16();
+            }
+        }
+        return Err(String::from("No parameter named {parameter}"));
+    }
+
+    fn get_float_parameter(&self, parameter: &str) -> Result<f32, String> {
+        for p in &self.parameters {
+            if p.param_name == parameter {
+                return p.get_f32();
+            }
+        }
+        return Err(String::from("No parameter named {parameter}"));
+    }
+
+    fn get_rgb_parameter(&self, parameter: &str) -> Result<RtRGBA, String> {
+        for p in &self.parameters {
+            if p.param_name == parameter {
+                return p.get_rgb();
+            }
+        }
+        return Err(String::from("No parameter named {parameter}"));
+    }
+
+    fn get_point_parameter(&self, parameter: &str) -> Result<RtPoint3, String> {
+        for p in &self.parameters {
+            if p.param_name == parameter {
+                return p.get_point();
+            }
+        }
+        return Err(String::from("No parameter named {parameter}"));
+    }
+    
+    fn get_vec_parameter(&self, parameter: &str) -> Result<RtVec3, String> {
+        for p in &self.parameters {
+            if p.param_name == parameter {
+                return p.get_vec3();
+            }
+        }
+        return Err(String::from("No parameter named {parameter}"));
+    }
 }
 
 // We declare a XML scene as a list of XML scene elements
@@ -315,14 +413,14 @@ impl XMLScene {
             if key == "type" || key == "name" { continue };
             xml_param.add_value(key, String::from(value));
         }
-        info!("    Parse param : {}", xml_param);
+        debug!("    Parse param : {}", xml_param);
         Ok(xml_param)
     }
 
     fn get_tag(tag_name: String, node: &BytesStart<'_>) -> Option<XMLSceneElement> {
         // Check the tag is registered
         if XML_ELEMENTS_LIST.contains(&tag_name.as_str()) {
-            info!(" +Parse tag {}", tag_name);
+            debug!(" +Parse tag {}", tag_name);
         } else {
             error!(" +Unknown tag {}", tag_name);
             return None
@@ -332,6 +430,9 @@ impl XMLScene {
         let mut element_type = None;
         for attribute in node.attributes() {
             let mut key = String::new();
+            if attribute.is_err() {
+                panic!("{}", attribute.err().unwrap() );
+            }
             _ = attribute.clone().unwrap().key.0.read_to_string(&mut key);
             let value = attribute.clone().unwrap().value;
             let value = std::str::from_utf8(value.as_ref()).unwrap();
@@ -381,10 +482,10 @@ impl XMLScene {
                     node.name().as_ref().read_to_string(&mut end_tag_name);
                     if end_tag_name.as_bytes() == tag_name.as_bytes() {
                         if xml_tag.is_some() {
-                            info!(" -Closing tag {}", end_tag_name);
+                            debug!(" -Closing tag {}", end_tag_name);
                             return Some(Ok(xml_tag.unwrap()))
                         } else {
-                            info!(" -Closing unknown tag {}", end_tag_name);
+                            error!(" -Closing unknown tag {}", end_tag_name);
                             return Some(Err(String::from(format!("Unknown tag {}", end_tag_name))))
                         }
                     } else {
@@ -413,7 +514,7 @@ impl XMLScene {
                 Ok(Event::Start(e)) => {
                     match e.name().as_ref() {
                         // Scene
-                        b"scene" => { info!("Tag : scene") },
+                        b"scene" => { debug!("Tag : scene") },
                         _ => {
                             let tag = Self::parse_tag(e, &mut reader);
                             if tag.is_none() { break } else if tag.as_ref().unwrap().is_ok() {
@@ -443,66 +544,92 @@ impl XMLScene {
         xml_scene
     }
 
-    fn get_settings(&self) -> RtRenderSettings {
+    fn get_settings(&self) -> Option<RtRenderSettings> {
+        let mut render_scene: Option<&XMLSceneElement> = None;
         for el in &self.0 {
-            if el.name == "render_settings" {
-                let mut p_spp: u8 = 1;
-                let mut p_bounces: u8 = 1;
-                for p in &el.parameters {
-                    if p.param_name == "spp" && p.get_u8().is_ok() {
-                        p_spp = p.get_u8().unwrap();
-                    }
-                    if p.param_name == "max_bounces" && p.get_u8().is_ok() {
-                        p_bounces = p.get_u8().unwrap();
-                    }
-                }
-                return RtRenderSettings::new(p_spp, p_bounces)
-            }
+            if el.name == "render_settings" { render_scene = Some(el); break; }
         }
-        panic!("No render settings found in the scene !")
+        if render_scene.as_ref().is_none() {
+            error!("No render settings found in the scene !");
+            return None
+        }
+        let p_spp = render_scene.as_ref().unwrap().get_u8_parameter("spp");
+        if p_spp.is_err() {
+            error!("Could not read render settings : {}", p_spp.err().unwrap());
+            return None
+        }
+        let mut p_bounces = render_scene.as_ref().unwrap().get_u8_parameter("max_bounces");
+        if p_spp.is_err() {
+            error!("Could not read number of bounces : {}", p_bounces.err().unwrap());
+            return None;
+        }
+        return Some(RtRenderSettings::new(p_spp.unwrap(), p_bounces.unwrap()))
     }
 
-    fn get_camera(&self) -> RtCamera {
+    fn get_camera(&self) -> Option<RtCamera> {
+        let mut camera: Option<&XMLSceneElement> = None;
         for el in &self.0 {
-            if el.name == "camera" {
-                // Camera found !
-                let mut vfov: f32 = 30.0;
-                let mut lookfrom = RtPoint3::default();
-                let mut lookat = RtPoint3::default();
-                for p in &el.parameters {
-                    if p.param_name == "v_fov" && p.get_f32().is_ok() {
-                        vfov = p.get_f32().unwrap();
-                    }
-                    if p.param_name == "look_from" && p.get_point().is_ok() {
-                        lookfrom = p.get_point().unwrap();
-                    }
-                    if p.param_name == "look_at" && p.get_point().is_ok() {
-                        lookat = p.get_point().unwrap();
-                    }
-                }
-                // Create and return camera
-                return RtCamera::new(
-                    1.0, 400, 
-                    vfov, 
-                    lookfrom, 
-                    lookat, 
-                    RtVec3::new(0.0, 1.0, 0.0)
-                )
-            }
+            if el.name == "camera" { camera = Some(el); break; }
         }
-        panic!("No camera found in the scene !")
+        if camera.is_none() {
+            error!("No render settings found in the scene !");
+            return None
+        }
+        let mut vfov = camera.as_ref().unwrap().get_float_parameter("v_fov");
+        let mut lookfrom = camera.as_ref().unwrap().get_point_parameter("look_from");
+        let mut lookat = camera.as_ref().unwrap().get_point_parameter("look_at");
+        if vfov.is_err() || lookfrom.is_err() || lookat.is_err() {
+            error!("Could not read camera !");
+            return None
+        }
+        // Create and return camera
+        return Some(RtCamera::new(
+            1.0, 400, 
+            vfov.unwrap(), 
+            lookfrom.unwrap(), 
+            lookat.unwrap(), 
+            RtVec3::new(0.0, 1.0, 0.0)
+        ))
     }
 
     fn get_shaders(&self) -> HashMap<String, Box<dyn RtShader>> {
         // shader_id -> shader
-        let shaders: HashMap<String, Box<dyn RtShader>> = HashMap::new();
+        let mut shaders_list: HashMap<String, Box<dyn RtShader>> = HashMap::new();
         for el in &self.0 {
             if el.name == "shader" {
-
+                if el.element_type.as_ref().is_none() || el.identifier.as_ref().is_none() {
+                    error!("Shader {} has no type or ID", el.name);
+                    continue;
+                }
+                if el.element_type.as_ref().unwrap() == "lambert" {
+                    let color = el.get_rgb_parameter("color");
+                    if color.is_err() {
+                        error!("Shader {} : cannot read parameter", el.name); continue;
+                    }
+                    shaders_list.entry(el.identifier.as_ref().unwrap().clone()).or_insert(
+                        Box::new(LambertShader { color: color.unwrap() }));
+                }
+                else if el.element_type.as_ref().unwrap() == "metal" {
+                    let color = el.get_rgb_parameter("color");
+                    let fuzz = el.get_float_parameter("fuzz");
+                    if color.is_err() || fuzz.is_err() {
+                        error!("Shader {} : cannot read parameter", el.name); continue;
+                    }
+                    shaders_list.entry(el.identifier.as_ref().unwrap().clone()).or_insert(
+                        Box::new(Metal { color: color.unwrap(), fuzz: fuzz.unwrap() }));
+                }
+                else if el.element_type.as_ref().unwrap() == "glass" {
+                    let ior = el.get_float_parameter("ior");
+                    if ior.is_err() {
+                        error!("Shader {} : cannot read parameter", el.name); continue;
+                    }
+                    shaders_list.entry(el.identifier.as_ref().unwrap().clone()).or_insert(
+                        Box::new(Glass { ior:ior.unwrap() }));
+                }
             }
         }
 
-        shaders
+        shaders_list
     }
 
 
@@ -510,54 +637,50 @@ impl XMLScene {
         // Create the scene
         let settings = self.get_settings();
         let camera = self.get_camera();
-        let mut scene = RtScene::new(settings, camera);
-        // Add geometry in the scene
-        error!("Geometry not implemented");
-        // TODO
+        if settings.is_none() || camera.is_none() {
+            return Err("Could not find camera or render settings !");
+        }
+        let mut scene = RtScene::new(settings.unwrap(), camera.unwrap());
 
-        // Placeholder geometry
-        scene.add_shape(Box::new(RtSphere { 
-            object_params: ObjectParams::new(
-                String::from(""), String::from(""),
-                Box::new(LambertShader {
-                    color: RtRGBA::from_rgb(0.5, 0.5, 0.5)
-                })
-            ),
-            center: RtPoint3::new(0.0, -1000.0, 0.0),
-            radius: 1000.0
-        }));
-        scene.add_shape(Box::new(RtSphere { 
-            object_params: ObjectParams::new(
-                String::from(""), String::from(""),
-                Box::new(LambertShader {
-                    color: RtRGBA::from_rgb(0.4, 0.2, 0.1)
-                })
-            ),
-            center: RtPoint3::new(-4.0, 1.0, 0.0),
-            radius: 1.0
-        }));
-        scene.add_shape(Box::new(RtSphere { 
-            object_params: ObjectParams::new(
-                String::from(""), String::from(""),
-                Box::new(Glass {
-                    ior: 1.5
-                })
-            ),
-            center: RtPoint3::new(0.0, 1.0, 0.0),
-            radius: 1.0
-        }));
-        scene.add_shape(Box::new(RtSphere { 
-            object_params: ObjectParams::new(
-                String::from(""), String::from(""),
-                Box::new(Metal {
-                    color: RtRGBA::from_rgb(0.7, 0.6, 0.5),
-                    fuzz: 0.0
-                })
-            ),
-            center: RtPoint3::new(4.0, 1.0, 0.0),
-            radius: 1.0
-        }));
-        // />
+        // Get shaders
+        let shaders = self.get_shaders();
+        info!("Found {} shaders", shaders.len());
+
+        // Add geometry in the scene
+        for el in &self.0 {
+            if el.name == "shape" {
+                if el.element_type.is_none() || el.identifier.is_none() {
+                    error!("Could not get shape type or ID !"); continue;
+                }
+                if el.element_type.as_ref().unwrap() != "sphere" {
+                    error!("Geometry type {} not implemented !", el.element_type.as_ref().unwrap());
+                    continue;
+                }
+                // Shader
+                let shader_id = el.get_linked_parameter_id("shader");
+                let shape_shader = shaders.get(shader_id.as_ref().unwrap().as_str());
+                let mut shader: Box<dyn RtShader> = Box::new(DEFAULT_SHADER.clone());
+                if shape_shader.is_none() {
+                    warn!("No shader linked to shape {}", el.identifier.as_ref().unwrap());
+                } else {
+                    shader = shaders[shader_id.as_ref().unwrap().as_str()].clone_dyn();
+                }
+                debug!("Shape {} -> shader {}", el.identifier.as_ref().unwrap(), shader_id.unwrap());
+                // New shape
+                scene.add_shape(
+                    Box::new(RtSphere {
+                        object_params: ObjectParams::new(
+                            el.identifier.as_ref().unwrap().clone(), 
+                            el.element_type.as_ref().unwrap().clone(), 
+                            shader),
+                        center: el.get_point_parameter("center").unwrap(),
+                        radius: el.get_float_parameter("radius").unwrap()
+                    })
+                );
+            }
+        }
+
+        info!("Found {} shapes", scene.shapes.len());
 
         // Return the scene
         Ok(scene)
@@ -570,7 +693,8 @@ pub fn open_xml_scene(path: &str) -> Option<RtScene> {
     let now = std::time::Instant::now();
 
     let xml_scene = XMLScene::parse(path);
-    info!("Scene : \n{}", xml_scene);
+    debug!("Scene : \n{}", xml_scene);
+    
     let scene = xml_scene.as_rt_scene();
     if scene.is_err() {
         error!("Could not parse scene {path} : {:?}", scene.err());

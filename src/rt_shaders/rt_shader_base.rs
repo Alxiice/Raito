@@ -11,6 +11,9 @@ use crate::rt_scene::*;
 
 
 pub trait RtShader {
+    // We need a cloning function on this trait for the XML scene parsing
+    fn clone_dyn(&self) -> Box<dyn RtShader>;
+
     // fn Init(&mut self, scene: &mut RenderScene);
     // fn Update(&mut self, scene: &mut RtRenderScene);
     fn evaluate(&self, scene: &RtScene, sg: &RtShaderGlobals) -> RtRGBA;

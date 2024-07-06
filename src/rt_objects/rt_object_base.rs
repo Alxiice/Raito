@@ -99,6 +99,10 @@ impl RtObjectList {
         }
     }
 
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
     pub fn add_object(&mut self, shape: Box<dyn RtObject>) {
         self.0.push(shape);
     }

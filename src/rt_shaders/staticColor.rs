@@ -15,6 +15,7 @@ use crate::rt_scene::*;
 //  Shader structure
 // ========================================
 
+#[derive(Clone, Debug)]
 pub struct StaticColorShader {
     pub color: RtRGBA
 }
@@ -25,6 +26,10 @@ pub struct StaticColorShader {
 // ========================================
 
 impl RtShader for StaticColorShader {
+    fn clone_dyn(&self) -> Box<dyn RtShader> {
+        Box::new(self.clone())
+    }
+    
     fn evaluate(&self, _scene: &RtScene, _sg: &RtShaderGlobals) -> RtRGBA {
         self.color
     }

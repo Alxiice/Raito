@@ -15,6 +15,7 @@ use crate::rt_scene::*;
 //  Shader structure
 // ========================================
 
+#[derive(Clone, Debug)]
 pub struct LightShader {
     pub color: RtRGBA,
     pub intensity: f32
@@ -26,6 +27,10 @@ pub struct LightShader {
 // ========================================
 
 impl RtShader for LightShader {
+    fn clone_dyn(&self) -> Box<dyn RtShader> {
+        Box::new(self.clone())
+    }
+    
     fn evaluate(&self, _scene: &RtScene, _sg: &RtShaderGlobals) -> RtRGBA {
         self.color * self.intensity
     }

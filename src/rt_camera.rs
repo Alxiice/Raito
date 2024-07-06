@@ -20,6 +20,11 @@ pub struct RtCamera {
     pixel00_loc: RtPoint3,
     pixel_delta_u: RtVec3,
     pixel_delta_v: RtVec3,
+
+    // Additional parameters that are not used
+    pub _vfov: f32,
+    pub _look_from: RtPoint3,
+    pub _look_at: RtPoint3,
 }
 
 fn degrees_to_radians(degrees: f32) -> f32 {
@@ -64,6 +69,7 @@ impl RtCamera {
         Self {
             image_width, image_height, center, 
             pixel00_loc, pixel_delta_u, pixel_delta_v,
+            _vfov: vfov, _look_from: lookfrom, _look_at: lookat
         }
     }
 

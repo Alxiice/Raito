@@ -19,6 +19,7 @@ const NB_SAMPLES: u8 = 10;
 //  Shader structure
 // ========================================
 
+#[derive(Clone, Debug)]
 pub struct Metal {
     pub color: RtRGBA,
     pub fuzz: f32
@@ -43,6 +44,10 @@ fn random_unit_vector() -> RtVec3 {
 // ========================================
 
 impl RtShader for Metal {
+    fn clone_dyn(&self) -> Box<dyn RtShader> {
+        Box::new(self.clone())
+    }
+    
     fn evaluate(&self, scene: &RtScene, sg: &RtShaderGlobals) -> RtRGBA {
         // Result
         let mut out_color = RtRGBA::BLACK;

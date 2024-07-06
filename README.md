@@ -2,9 +2,11 @@
 Raito Rendering engine
 
 <p align="center">
-  <img src="./docs/source/images/raito_render_view.png" />
+  <img src="./docs/source/videos/pres-1.webm" />
   <i>Raito RenderView UI with a sphere shaded with normals</i>
 </p>
+
+[!(Presentation Video)](./docs/source/videos/pres-1.webm)
 
 
 ## Dependencies

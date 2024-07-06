@@ -240,7 +240,7 @@ impl RaitoRenderApp {
         }
     }
 
-    pub fn setup_scene(&mut self) {
+    pub fn setup_default_scene(&mut self) {
         let settings = RtRenderSettings::new(
             self.parameters.render_spp, self.parameters.max_bounces);
         let camera = RtCamera::new(
@@ -248,20 +248,21 @@ impl RaitoRenderApp {
             self.parameters.look_from,
             self.parameters.look_at,
             RtVec3::new(0.0, 1.0, 0.0));
-        self.scene = Some(get_default_scene_1(settings, camera));
+        self.scene = Some(get_default_scene_0(settings, camera));
     }
 
     pub fn open_scene(&mut self, path: PathBuf) -> bool {
-        // let settings = RtRenderSettings::new(
-        //     self.parameters.render_spp, self.parameters.max_bounces);
-        // let camera = RtCamera::new(
-        //     1.0, 400, self.parameters.camera_fov, 
-        //     self.parameters.look_from,
-        //     self.parameters.look_at,
-        //     RtVec3::new(0.0, 1.0, 0.0));
         let xml_scene = open_xml_scene(path.to_str().unwrap());
         self.scene = xml_scene;
-        // Setup camera in parameters
+        
+        // Setup UI from scene parameters
+        //   render settings
+        self.parameters.render_spp = self.scene.as_ref().unwrap().settings.render_spp;
+        self.parameters.max_bounces = self.scene.as_ref().unwrap().settings.max_bounces;
+        //   camera
+        self.parameters.camera_fov = self.scene.as_ref().unwrap().get_camera()._vfov;
+        self.parameters.look_from = self.scene.as_ref().unwrap().get_camera()._look_from;
+        self.parameters.look_at = self.scene.as_ref().unwrap().get_camera()._look_at;
 
         true
     }
@@ -309,7 +310,8 @@ impl RaitoRenderApp {
         // Setup scene
         if self.scene.is_none() {
             error!("No scene loaded to render !");
-            return;
+            self.setup_default_scene();
+            // return;
         } else {
             self.update_params();
         }

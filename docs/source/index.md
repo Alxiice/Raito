@@ -1,5 +1,10 @@
 # Introduction
 
+<figure markdown="span">
+  ![Raito render](images/raito_render_0.png)
+  <figcaption>A render done with Raito</figcaption>
+</figure>
+
 
 ## Why another rendering engine ?
 
@@ -17,6 +22,13 @@ Also, I dropped Rust after the engineering school, so I wanted to get back to it
 
 ## Description
 
+<figure class="video_container">
+  <video controls="true" allowfullscreen="true">
+    <source src="videos/pres-1.webm" type="video/webm">
+  </video>
+  <figcaption>Raito interface and rendering examples</figcaption>
+</figure>
+
 !!! note
 
     For now there is not much implemented as this is the start of the project
@@ -26,11 +38,6 @@ The goal for a final product is to have :
 - the rendering engine to launch in command line arguments and that will take a scene in input and output an image
 - A render view that enables us to use IPR (Interactive Photorealistic Rendering)
 - Widgets that enables the user to edit the current scene (move lights, etc)
-
-<figure markdown="span">
-  ![Raito Renderview](images/raito_render_view.png)
-  <figcaption>This is the Raito RenderView</figcaption>
-</figure>
 
 
 ## Roadmap
@@ -46,24 +53,32 @@ The goal for a final product is to have :
 - [ ] intersections 
     - [x] with spheres
     - [ ] with triangles
-- [ ] Simple ray tracing
+- [x] Simple ray tracing
     - [x] Tracing one ray and checking for hit
     - [x] Propagate ray tracing information onwards and backwards once we get a response from a light or we reached the end
-- [ ] simple light model
-    - [ ] skydome
+- [ ] Be able to export the image
+- [x] simple light model
+    - [x] sky
     - [x] point lights
-- [ ] Light transport with shading information, simple shading models
-    - [x] reflective
-    - [ ] diffuse
-    - [ ] glass
-- [ ] Be able to move the camera (camera & world space, for now no model space). Not interactive (move the camera from the parameters tab)
+- [x] Light transport with shading information, simple shading models
+    - [x] diffuse
+    - [x] metal
+    - [x] glass
+- [x] Be able to move the camera (camera & world space, for now no model space). Not interactive (move the camera from the parameters tab)
+- [x] Simple IPR (interactive progressive rendering)
+    - [x] either we launch the render or we launch the IPR (and then we can stop it)
+    - [x] Modifying parameters relaunches the render on IPR mode.
+- [x] Be able to load scenes from XML files.
+- [ ] Add multi-threading & buckets : each available thread takes an available bucket, renders it, sends the result to the main thread that processes it and update the final image
+- [ ] Progressive rendering
+- [ ] Move the camera with keyboard/mouse events
+
 
 **Release 0.1.0**
 
-- [ ] Add multi-threading & buckets : each available thread takes an available bucket, renders it, sends the result to the main thread that processes it and update the final image
-- [ ] Implement AA : relaunch render for each bucket (value can be set from the interface)
-- [ ] Work on IPR
-    - [ ] either we launch the render or we launch the IPR (and then we can stop it)
-    - [ ] Modifying parameters relaunches the IPR
-- [ ] Plug-in system for materials
-- [ ] Maybe implement UVs, provide these infos to the materials so that we can start using textures, etc
+- [ ] BVH ...
+- [ ] Cleaner code, more errors handling
+- [ ] Plugin system for materials and shapes
+- [ ] Rework XML loading to work dynamically
+- [ ] UVs, Texture loading on materials
+- [ ] ...

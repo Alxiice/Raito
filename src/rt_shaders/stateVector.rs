@@ -15,6 +15,7 @@ use crate::rt_scene::*;
 //  Shader structure
 // ========================================
 
+#[derive(Clone, Debug)]
 pub struct StateVectorShader {
     pub output: String
 }
@@ -25,6 +26,10 @@ pub struct StateVectorShader {
 // ========================================
 
 impl RtShader for StateVectorShader {
+    fn clone_dyn(&self) -> Box<dyn RtShader> {
+        Box::new(self.clone())
+    }
+    
     fn evaluate(&self, _scene: &RtScene, sg: &RtShaderGlobals) -> RtRGBA {
         // TODO : Switch depending on the value of self.output
         // - N : sg.N

@@ -12,54 +12,35 @@
     </camera>
     <!-- OBJECTS -->
     <!-- Declare shaders -->
-    <shader type="lambert" name="ground_mat">
+    <shader type="lambert" name="mat1">
         <parameter type="rgb" name="color" r="0.5" g="0.5" b="0.5"/> 
     </shader>
-    <shader type="lambert" name="lambert0">
+    <shader type="lambert" name="mat2">
         <parameter type="rgb" name="color" r="0.4" g="0.2" b="0.1"/> 
     </shader>
-    <shader type="glass" name="glass0">
-        <parameter type="float" name="ior" value="1.5"/> 
-    </shader>
-    <shader type="metal" name="metal0">
+    <shader type="metal" name="mat3">
         <parameter type="rgb" name="color" r="0.7" g="0.6" b="0.5"/> 
-        <parameter type="float" name="fuzz" value="0.0"/> 
+        <parameter type="float" name="fuzz" value="0.5"/> 
     </shader>
     <!-- Declare geometries -->
     <shape type="sphere" name="ground">
-        <parameter type="node" name="shader" id="ground_mat"/>
+        <parameter type="node" name="shader" id="mat1"/>
         <parameter type="float" name="radius" value="1000.0"/>
         <parameter type="point" name="center" x="0.0" y="-1000.0" z="0.0"/>
     </shape>
     <shape type="sphere" name="sphere_diffuse">
-        <parameter type="node" name="shader" id="lambert0"/>
+        <parameter type="node" name="shader" id="mat2"/>
         <parameter type="float" name="radius" value="1.0"/>
         <parameter type="point" name="center" x="-4.0" y="1.0" z="0.0"/>
     </shape>
     <shape type="sphere" name="sphere_glass">
-        <parameter type="node" name="shader" id="glass0"/>
+        <parameter type="node" name="shader" id="mat3"/>
         <parameter type="float" name="radius" value="1.0"/>
         <parameter type="point" name="center" x="0.0" y="1.0" z="0.0"/>
     </shape>
     <shape type="sphere" name="sphere_metal">
-        <parameter type="node" name="shader" id="metal0"/>
+        <parameter type="node" name="shader" id="mat2"/>
         <parameter type="float" name="radius" value="1.0"/>
         <parameter type="point" name="center" x="4.0" y="1.0" z="0.0"/>
     </shape>
-    <!-- LIGHTS -->
-    <!-- Declare shaders -->
-    <!-- 
-    <shader type="light" name="light0">
-        <parameter type="rgb" name="color" r="1.0" g="0.7" b="0.7"/> 
-        <parameter type="float" name="intensity" value="1.0"/> 
-    </shader>
-     -->
-    <!-- Declare lights -->
-    <!-- 
-    <light type="point_light">
-        <parameter type="node" name="shader" id="light0"/>
-        <parameter type="float" name="radius" value="1.0"/>
-        <parameter type="vec3" name="center" x="1.0" y="1.0" z="-4.0"/>
-    </light>
-     -->
 </scene>

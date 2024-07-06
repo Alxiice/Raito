@@ -28,7 +28,7 @@ pub const RT_ONEOVERPI: f32 = 0.3183;
 // ========================================
 
 /// RGBA Color
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct RtRGBA {
     pub r: f32,
     pub g: f32,
