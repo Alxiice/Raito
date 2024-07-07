@@ -6,6 +6,11 @@
 /// =====================================================
 
 use std::f32::NAN;
+use std::collections::BinaryHeap;
+use std::sync::{Mutex, Condvar};
+use std::{ thread, sync::Arc, time::Duration };
+
+use log::info;
 
 use crate::rt_types::*;
 use crate::rt_camera::*;
@@ -150,6 +155,63 @@ pub fn RtTraceToLights(scene: &RtScene, ray: &RtRay) -> Option<RtHit> {
 }
 
 
+// ========================================
+//  Render Queue
+// ========================================
+
+pub struct RtRenderQueue {
+    data: Mutex<BinaryHeap<RtRenderBucket>>,
+    cv: Condvar,
+    remaining_buckets: u16
+}
+
+impl RtRenderQueue {
+    fn new(scene: &RtScene) -> Self {
+        let mode = RtBucketMode::BUCKET_MODE_TOP;
+        let bucket_size = [100, 100];
+        let buckets = RtRenderBucket::get_bucket_list(scene.get_camera(), mode, bucket_size);
+        let nb_buckets = buckets.len();
+        let mut queue = Self { 
+            data: Mutex::new(BinaryHeap::from(buckets)),
+            cv: Condvar::new(),
+            remaining_buckets: nb_buckets as u16
+        };
+        queue
+    }
+
+    /// Adds an element to the back of the queue
+    fn push(&mut self, value: RtRenderBucket) {
+        let mut data = self.data.lock().unwrap();
+        data.push(value);
+        self.cv.notify_one();
+    }
+    
+    /// Removes an element from the front of the queue
+    fn pop(&mut self) -> RtRenderBucket {
+        let mut data = self.data.lock().unwrap();
+        // wait for the notification if the queue is empty
+        while data.is_empty() {
+            data = self.cv.wait(data).unwrap();
+        }
+        data.pop().unwrap()
+    }
+    
+    fn len(&self) -> usize {
+        let data = self.data.lock().unwrap();
+        data.len()
+    }
+    
+    fn is_empty(&self) -> bool {
+        let data = self.data.lock().unwrap();
+        data.is_empty()
+    }
+}
+
+
+// ========================================
+//  Launch render
+// ========================================
+
 fn linear_to_gamma(linear_component: f32) -> f32 {
     if linear_component > 0.0 {
         linear_component.sqrt()
@@ -158,8 +220,6 @@ fn linear_to_gamma(linear_component: f32) -> f32 {
     }
 }
 
-
-/// Launch render on scene
 pub fn RtRenderScene(scene: &RtScene, result: &mut RtRenderResult) {
     // TODO : for now the camera
     // - center is at 0
@@ -170,29 +230,37 @@ pub fn RtRenderScene(scene: &RtScene, result: &mut RtRenderResult) {
 
     let inv_nb_spp: f32 = 1.0 / (scene.settings.render_spp as f32);
 
-    let cam_rays = RtCameraRayIterator::new(scene.get_camera());
-    for camera_ray in cam_rays {
-        let mut pixelColor = RtRGBA::BLACK;
-        for _ in 0..scene.settings.render_spp {
-            let ray = camera_ray.get_ray(scene.get_camera());
-            let hit = RtTraceRay(scene, &ray);
-            if hit.is_some() {
-                let hitResult = hit.unwrap();
-                pixelColor += hitResult.colorOutput * inv_nb_spp;
-            } else {
-                // let a = 0.5 * ray.dir.y + 1.0;
-                // let skyColor = (1.0 - a) * RtRGBA::WHITE + a * RtRGBA::from_rgb(0.5, 0.7, 1.0);
-                // pixelColor += skyColor * inv_nb_spp;
-                pixelColor += RtRGBA::ERRCOLOR  * inv_nb_spp;
+    // Build the list of buckets
+    info!("Creating bucket queue");
+    let mut bucket_queue = RtRenderQueue::new(scene);
+    info!("Bucket queue created with {} elements", bucket_queue.len());
+    
+    while !bucket_queue.is_empty() {
+        let bucket = bucket_queue.pop();
+        thread::spawn(|| {
+            let cam_rays = RtBucketRayIterator::new(&bucket);
+            for camera_ray in cam_rays {
+                let mut pixelColor = RtRGBA::BLACK;
+                // TODO
+                // If we are in progressive mode compute only 1 SPP per bucket
+                // if we are not, compute all SPP on the first bucket
+                for _ in 0..scene.settings.render_spp {
+                    let ray = camera_ray.get_ray(scene.get_camera());
+                    let hit = RtTraceRay(scene, &ray);
+                    if hit.is_some() {
+                        let hitResult = hit.unwrap();
+                        pixelColor += hitResult.colorOutput * inv_nb_spp;
+                    } else {
+                        pixelColor += RtRGBA::ERRCOLOR  * inv_nb_spp;
+                    }
+                }
+                let outColor = RtRGBA::from_rgb(
+                    linear_to_gamma(pixelColor.r), 
+                    linear_to_gamma(pixelColor.g), 
+                    linear_to_gamma(pixelColor.b) 
+                );
+                result.set_pixel_color(camera_ray.x(), camera_ray.y(), outColor);
             }
-        }
-        // panic!("Pixel : {} {}", camera_ray.x(), camera_ray.y());
-        let outColor = RtRGBA::from_rgb(
-            linear_to_gamma(pixelColor.r), 
-            linear_to_gamma(pixelColor.g), 
-            linear_to_gamma(pixelColor.b) 
-        );
-
-        result.set_pixel_color(camera_ray.x(), camera_ray.y(), outColor);
+        });
     }
 }

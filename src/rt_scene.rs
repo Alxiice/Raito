@@ -38,11 +38,12 @@ use crate::rt_objects::rt_geometries::RtSphere;
 pub struct RtRenderSettings {
     pub render_spp: u8,
     pub max_bounces: u8,
+    pub progressive: bool,
 }
 
 impl RtRenderSettings {
     pub fn new(render_spp: u8, max_bounces: u8) -> Self {
-        Self { render_spp, max_bounces }
+        Self { render_spp, max_bounces, progressive: false }
     }
 
     pub fn update(&mut self, render_spp: u8, max_bounces: u8) {
