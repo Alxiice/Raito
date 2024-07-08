@@ -12,6 +12,7 @@ use log::error;
 use crate::rt_types::*;
 
 /// Holds the result from the render
+#[derive(PartialEq, Eq, PartialOrd)]
 pub struct RtRenderResult {
     pub width: usize,
     pub height: usize,
@@ -45,12 +46,12 @@ impl RtRenderResult {
     }
 
     /// Utility function to query the color of a pixel
-    pub fn rt_get_pixel_color(&mut self, x: usize, y: usize) -> RtRGBA {
+    pub fn rt_get_pixel_color(&self, x: usize, y: usize) -> RtRGBA {
         self.render_grid[y][x]
     }
     
     /// Utility function to query the color of a pixel
-    pub fn get_pixel_color(&mut self, x: usize, y: usize) -> Color32 {
+    pub fn get_pixel_color(&self, x: usize, y: usize) -> Color32 {
         let color = self.render_grid[y][x];
         color.to_color32()
     }

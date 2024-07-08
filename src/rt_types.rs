@@ -28,12 +28,20 @@ pub const RT_ONEOVERPI: f32 = 0.3183;
 // ========================================
 
 /// RGBA Color
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
 pub struct RtRGBA {
     pub r: f32,
     pub g: f32,
     pub b: f32,
     pub a: f32
+}
+
+impl Eq for RtRGBA {}
+
+impl std::fmt::Display for RtRGBA {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "<RtRGBA {} {} {} {}>", self.r, self.g, self.b, self.a)
+    }
 }
 
 impl Default for RtRGBA {
