@@ -77,11 +77,11 @@ impl RtCamera {
         }
     }
 
-    fn get_width(&self) -> u16 {
+    pub fn get_width(&self) -> u16 {
         self.image_width
     }
 
-    fn get_height(&self) -> u16 {
+    pub fn get_height(&self) -> u16 {
         self.image_height
     }
 
