@@ -35,6 +35,7 @@ use crate::rt_objects::rt_geometries::RtSphere;
 //  Render settings
 // ========================================
 
+#[derive(Clone)]
 pub struct RtRenderSettings {
     pub render_spp: u8,
     pub max_bounces: u8,
@@ -59,6 +60,7 @@ impl RtRenderSettings {
 //  used for intersections
 // ========================================
 
+#[derive(Clone)]
 pub struct RtScene {
     pub settings: RtRenderSettings,
     camera: RtCamera,

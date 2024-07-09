@@ -302,6 +302,15 @@ impl RaitoRenderApp {
         //     return false;
         // }
         // self.update_image();
+        if self.scene.is_some() {
+            let scene = self.scene.as_ref().unwrap().clone();
+            RtRenderScene(scene, &mut self.result);
+        } else {
+            error!("No scene to render !");
+            self.parameters.ipr_enabled = false;  // Make sure to disable IPR
+            return false;
+        }
+        self.update_image();
         true
     }
 

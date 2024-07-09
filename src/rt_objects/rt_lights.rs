@@ -14,6 +14,7 @@ use crate::rt_objects::rt_object_base::*;
 //  Define objects
 // ========================================
 
+#[derive(Clone)]
 pub struct RtSkydomeLight {
     pub object_params: ObjectParams,
     pub color: RtRGBA,
@@ -25,6 +26,7 @@ impl RtSkydomeLight {
 }
 
 /// Point light
+#[derive(Clone)]
 pub struct RtPointLight {
     pub object_params: ObjectParams,
     pub center: RtPoint3,
@@ -49,6 +51,10 @@ pub enum RtLightTypes {
 impl RtObject for RtPointLight {
     fn getObjectParams(&self) -> &ObjectParams {
         &self.object_params
+    }
+
+    fn clone_box(&self) -> Box<dyn RtObject> {
+        Box::new(self.clone())
     }
     
     fn get_intersection(&self, ray: &RtRay) -> Option<RtRayHit> {

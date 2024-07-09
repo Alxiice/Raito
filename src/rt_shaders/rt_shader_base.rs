@@ -18,3 +18,9 @@ pub trait RtShader: Send + Sync {
     // fn Update(&mut self, scene: &mut RtRenderScene);
     fn evaluate(&self, scene: &RtScene, sg: &RtShaderGlobals) -> RtRGBA;
 }
+
+impl Clone for Box<dyn RtShader> {
+    fn clone(&self) -> Box<dyn RtShader> {
+        self.clone_dyn()
+    }
+}
