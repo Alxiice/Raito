@@ -289,8 +289,9 @@ impl RtThreadsStack {
         let mut data = self.final_output.lock().unwrap();
         for x in 0..data.width {
             for y in 0..data.height {
+                let previous_color = data.rt_get_pixel_color(x, y);
                 let color = thread_res.rt_get_pixel_color(x, y);
-                data.set_pixel_color(x, y, color);
+                data.set_pixel_color(x, y, previous_color + color);
             }
         }
     }
@@ -302,13 +303,10 @@ impl RtThreadsStack {
     }
 
     fn wait_for_thread(&mut self, tid: usize) -> bool {
-        if self.threads.len() < tid {
-            return true;
-        }
         let thread = self.threads.remove(tid);
         info!("Removed");
         if thread.is_none() {
-            false
+            true
         } else {
             let thread = thread.unwrap();
             if thread.0.is_finished() {
@@ -326,6 +324,9 @@ impl RtThreadsStack {
     }
 
     fn wait_for_free(&mut self) -> bool {
+        if self.threads.len() < Self::MAX_TRHEADS {
+            return true;
+        }
         for tid in 0..Self::MAX_TRHEADS {
             if self.wait_for_thread(tid) {
                 info!("Available threads");
