@@ -38,7 +38,7 @@ fn Point3Widget(ui: &mut egui::Ui, updated: &mut bool,
 pub struct RtParameters {
     pub ipr_enabled: bool,
     // Render settings
-    pub render_spp: u8,
+    pub render_spp: u16,
     pub max_bounces: u8,
     // Camera params
     pub camera_fov: f32,
@@ -83,14 +83,14 @@ impl Default for RtParameters {
 
 fn render_settings_ui(ui: &mut egui::Ui, params: &mut RtParameters, updated: &mut bool) {
     ui.label("SPP");
-    if ui.add(egui::Slider::new(&mut params.render_spp, 0..=100)
+    if ui.add(egui::Slider::new(&mut params.render_spp, 0..=500)
     .drag_value_speed(1.0)).changed() {
         *updated = true
     }
     ui.end_row();
     
     ui.label("Maximum bounces");
-    if ui.add(egui::Slider::new(&mut params.max_bounces, 0..=100)
+    if ui.add(egui::Slider::new(&mut params.max_bounces, 0..=25)
     .drag_value_speed(1.0)).changed() {
         *updated = true
     }

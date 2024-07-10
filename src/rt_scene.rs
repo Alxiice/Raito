@@ -37,18 +37,20 @@ use crate::rt_objects::rt_geometries::RtSphere;
 
 #[derive(Clone)]
 pub struct RtRenderSettings {
-    pub render_spp: u8,
+    pub render_spp: u16,
+    pub inv_nb_spp: f32,
     pub max_bounces: u8,
     pub progressive: bool,
 }
 
 impl RtRenderSettings {
-    pub fn new(render_spp: u8, max_bounces: u8) -> Self {
-        Self { render_spp, max_bounces, progressive: false }
+    pub fn new(render_spp: u16, max_bounces: u8) -> Self {
+        Self { render_spp, inv_nb_spp: 1.0 / (render_spp as f32), max_bounces, progressive: false }
     }
 
-    pub fn update(&mut self, render_spp: u8, max_bounces: u8) {
+    pub fn update(&mut self, render_spp: u16, max_bounces: u8) {
         self.render_spp = render_spp;
+        self.inv_nb_spp = 1.0 / (render_spp as f32);
         self.max_bounces = max_bounces;
     }
 }
@@ -556,7 +558,7 @@ impl XMLScene {
             error!("No render settings found in the scene !");
             return None
         }
-        let p_spp = render_scene.as_ref().unwrap().get_u8_parameter("spp");
+        let p_spp = render_scene.as_ref().unwrap().get_u16_parameter("spp");
         if p_spp.is_err() {
             error!("Could not read render settings : {}", p_spp.err().unwrap());
             return None

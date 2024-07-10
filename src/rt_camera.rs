@@ -117,33 +117,18 @@ pub enum RtBucketMode {
 
 #[derive(PartialEq, Eq, PartialOrd)]
 pub struct RtRenderBucket {
-    top_coordinate: u16,
-    left_coordinate: u16,
-    width: u16,
-    height: u16,
-    samples_nb: u16,
-    result: RtRenderResult
+    pub top_coordinate: u16,
+    pub left_coordinate: u16,
+    pub width: u16,
+    pub height: u16,
+    pub samples_nb: u16,  // Could also be remaining samples
+    pub result: RtRenderResult
 }
 
-impl RtRenderBucket {
-    pub fn new(top: u16, left: u16, width: u16, height: u16, samples_nb: u16) -> RtRenderBucket {
-        RtRenderBucket { 
-            top_coordinate: top, left_coordinate: left, width, height, samples_nb,
-            result: RtRenderResult::new(usize::from(width), usize::from(height))
-        }
-    }
-
-    pub fn display(&self) {
-        info!("<Bucket ({}, {}), width={}, height={}>", 
-            self.top_coordinate, self.left_coordinate, self.width, self.height);
-    }
-
-    pub fn write_pixel(&mut self, x: usize, y: usize, color: RtRGBA) {
-        self.result.set_pixel_color(x, y, color);
-    }
-
-    pub fn read_pixel(&self, x: usize, y: usize) -> RtRGBA {
-        self.result.rt_get_pixel_color(x, y)
+impl std::fmt::Display for RtRenderBucket {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "<Bucket ({}, {}), width={}, height={}>", 
+            self.top_coordinate, self.left_coordinate, self.width, self.height)
     }
 }
 
@@ -160,6 +145,18 @@ impl Ord for RtRenderBucket {
 }
 
 impl RtRenderBucket {
+    pub fn new(top: u16, left: u16, width: u16, height: u16, samples_nb: u16) -> RtRenderBucket {
+        RtRenderBucket { 
+            top_coordinate: top, left_coordinate: left, width, height, samples_nb,
+            result: RtRenderResult::new(
+                usize::from(width), usize::from(height), usize::from(left), usize::from(top))
+        }
+    }
+
+    pub fn write_pixel(&mut self, x: usize, y: usize, color: RtRGBA) {
+        self.result.set_pixel_color(x, y, color);
+    }
+
     fn get_top_buckets(camera: &RtCamera, bucket_size: [u16; 2]) -> Vec<Self> {
         let mut bucket_list = Vec::new();
         let rem_buckets = [
@@ -209,8 +206,8 @@ impl RtRenderBucket {
 // ========================================
 
 pub struct RtPixel {
-    x: u16,
-    y: u16
+    x: u16, 
+    y: u16,
 }
 
 impl RtPixel {
@@ -218,53 +215,67 @@ impl RtPixel {
         Self { x, y }
     }
 
-    pub fn get_ray(&self, camera: &RtCamera) -> RtRay {
+    pub fn get_ray(&self, camera: &RtCamera, offset: [u16; 2]) -> RtRay {
+        // Offset because bucket don't necessarily start at the same
+        // location than the image plane
         camera.get_camera_ray(
-            self.x, self.y,
+            self.x + offset[0], 
+            self.y + offset[1],
             random_float(),
             random_float()
         )
     }
 
-    pub fn x(&self) -> usize {
+    pub fn pixel_x(&self) -> usize {
         usize::from(self.x)
     }
 
-    pub fn y(&self) -> usize {
+    pub fn pixel_y(&self) -> usize {
         usize::from(self.y)
     }
 }
 
-pub struct RtBucketRayIterator<'a> {
-    bucket: &'a RtRenderBucket,
+use std::fmt::write;
+use std::rc::Rc;
+use std::cell::RefCell;
+
+pub struct RtBucketRayIterator {
+    // Bucket position
+    top_left: [u16; 2],
+    size: [u16; 2],
     /// Current position
     current_x: u16,
     current_y: u16,
 }
 
-impl<'a> RtBucketRayIterator<'a> {
+impl RtBucketRayIterator {
     /// Creates an iterator for camera rays
-    pub fn new( bucket: &'a RtRenderBucket) -> Self {
-        Self { bucket, current_x: 0, current_y: 0 }
+    pub fn new( bucket: &RtRenderBucket) -> Self {
+        Self { 
+            top_left: [bucket.top_coordinate, bucket.left_coordinate], 
+            size: [bucket.width, bucket.height], 
+            current_x: 0, 
+            current_y: 0
+        }
     }
 }
 
-impl<'a> Iterator for RtBucketRayIterator<'a> {
+impl Iterator for RtBucketRayIterator {
     type Item = RtPixel;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.current_x >= self.bucket.width ||
-           self.current_y >= self.bucket.height {
+        if self.current_x >= self.size[0] ||
+           self.current_y >= self.size[1] {
             return None
         }
 
         let pixel = RtPixel::new(
-            self.current_x + self.bucket.top_coordinate, 
-            self.current_y + self.bucket.left_coordinate
+            self.current_x, 
+            self.current_y,
         );
 
         // Compute next pixel position
-        if self.current_x >= self.bucket.width - 1 {
+        if self.current_x >= self.size[0] - 1 {
             // Pick first pixel of the bottom line
             self.current_x  = 0;
             self.current_y += 1;

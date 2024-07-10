@@ -1,4 +1,4 @@
-use std::borrow::{Borrow, BorrowMut};
+use std::borrow::BorrowMut;
 /// =====================================================
 ///                    Raito Render
 /// 
@@ -13,7 +13,8 @@ use std::thread::JoinHandle;
 use std::{ thread, time::Duration };
 use std::sync::{Arc, LockResult, RwLock, RwLockReadGuard, RwLockWriteGuard, MutexGuard};
 
-use log::info;
+use egui::output;
+use log::{ info, debug, warn };
 
 use crate::rt_types::*;
 use crate::rt_camera::*;
@@ -169,6 +170,8 @@ pub struct RtRenderQueue {
 }
 
 impl RtRenderQueue {
+    const MAX_TRHEADS: usize = 8;
+
     fn new(scene: &RtScene) -> Self {
         let mode = RtBucketMode::BUCKET_MODE_TOP;
         let bucket_size = [100, 100];
@@ -220,7 +223,7 @@ struct RtThreadsStack {
 }
 
 impl RtThreadsStack {
-    const MAX_TRHEADS: usize = 10;
+    const MAX_TRHEADS: usize = 8;
 
     fn new(width: usize, height: usize) -> Self {
         Self {
@@ -240,24 +243,6 @@ impl RtThreadsStack {
         self.threads.len() == 0
     }
 
-    /*
-    fn update_result(&mut self, thread_res: &RtRenderResult) {
-        let mut data = self.final_output.lock().unwrap();
-        for x in 0..data.width {
-            for y in 0..data.height {
-                let previous_color = data.rt_get_pixel_color(x, y);
-                let color = thread_res.rt_get_pixel_color(x, y);
-                data.set_pixel_color(x, y, previous_color + color);
-            }
-        }
-    }
-
-    fn update_output(&mut self, result: Arc<Mutex<RtRenderResult>>) {
-        let result = result.lock().unwrap();
-        self.update_result(&result);
-    }
-    */
-
     fn wait_for_thread(&mut self, tid: usize) -> bool {
         let thread = self.threads.remove(tid);
         if thread.is_none() {
@@ -265,13 +250,12 @@ impl RtThreadsStack {
         } else {
             let thread = thread.unwrap();
             if thread.is_finished() {
-                info!("one finished !");
-                // self.update_output(thread.1.clone());
+                debug!("Waiting for thread {tid}");
                 thread.join().unwrap();
+                // debug!("Thread {tid} finished");
                 true
             } else {
                 // Put the thread in the queue again
-                info!("putting it back !");
                 self.threads.insert(tid, thread);
                 false
             }
@@ -294,13 +278,12 @@ impl RtThreadsStack {
         for tid in 0..Self::MAX_TRHEADS {
             let thread = self.threads.remove(tid);
             if thread.is_some() {
-                info!("Wait for thread {}", tid);
+                debug!("Wait for thread {}", tid);
                 let thread = thread.unwrap();
-                // self.update_output(thread.1.clone());
                 thread.join().unwrap();
             }
         }
-        info!("Finished threads !");
+        debug!("Finished threads !");
     }
 }
 
@@ -317,107 +300,89 @@ fn linear_to_gamma(linear_component: f32) -> f32 {
     }
 }
 
-fn RtThRenderScene(scene: &RtScene, bucket: RtRenderBucket) -> RtRenderResult {
-    let inv_nb_spp: f32 = 1.0 / (scene.settings.render_spp as f32);
-
-    let render_bucket = &bucket;
-    render_bucket.display();
-
-    let mut output  = RtRenderResult::new(
-        usize::from(scene.get_camera().get_width()), 
-        usize::from(scene.get_camera().get_height())
-    );
-
-    let cam_rays = RtBucketRayIterator::new(render_bucket);
-    for camera_ray in cam_rays {
+/// Render a bucket from the scene
+fn RtRenderBucket(scene: &RtScene, mut bucket: &mut RtRenderBucket) {
+    debug!("Bucket : {bucket}");
+    let cam_rays = RtBucketRayIterator::new(&bucket);
+    for pixel in cam_rays {
         let mut pixelColor = RtRGBA::BLACK;
         // TODO
         // If we are in progressive mode compute only 1 SPP per bucket
         // if we are not, compute all SPP on the first bucket
         let spp_nb = scene.settings.render_spp;
         for _ in 0..spp_nb {
-            let ray = camera_ray.get_ray(scene.get_camera());
+            let ray = pixel.get_ray(
+                scene.get_camera(), 
+                [
+                    bucket.left_coordinate, // Offset for X coordinate
+                    bucket.top_coordinate   // Offset for Y coordinate
+                ]
+            );
             let hit = RtTraceRay(scene, &ray);
             if hit.is_some() {
                 let hitResult = hit.unwrap();
-                pixelColor += hitResult.colorOutput * inv_nb_spp;
+                pixelColor += hitResult.colorOutput * scene.settings.inv_nb_spp;
             } else {
-                pixelColor += RtRGBA::ERRCOLOR  * inv_nb_spp;
+                pixelColor += RtRGBA::ERRCOLOR  * scene.settings.inv_nb_spp;
             }
         }
-        output.set_pixel_color(camera_ray.x(), camera_ray.y(), pixelColor);
+        bucket.write_pixel(pixel.pixel_x(), pixel.pixel_y(), pixelColor);
     }
-
-    info!("Finished thread render !");
-
-    output
 }
 
 pub fn RtRenderScene(scene: RtScene, result: &mut RtRenderResult) {
-    // TODO : for now the camera
-    // - center is at 0
-    // - direction is towards the -y direction
-    // 
-    // We want to be able to change that, move and rotate the camera
-    // We need to implement world and camera space
-
-    let inv_nb_spp: f32 = 1.0 / (scene.settings.render_spp as f32);
-
     // Build the list of buckets
-    info!("Creating bucket queue");
+    debug!("Creating bucket queue");
     let mut bucket_queue = Arc::new(RtRenderQueue::new(&scene));
-    info!("Bucket queue created with {} elements", bucket_queue.len());
+    debug!("Bucket queue created with {} elements", bucket_queue.len());
 
     let scene = Arc::new(scene);
     
-    // let mut threads: Vec<JoinHandle<()>> = Vec::new();
     let mut threads = RtThreadsStack::new(result.width, result.height);
-    let mut output = RtRenderResult::new(result.width, result.height);
-    let mut locatedResult = Arc::new(Mutex::new(output));
+    let mut final_image = Arc::new(Mutex::new(
+        RtRenderResult::new(result.width, result.height, 0, 0)
+    ));
     while !bucket_queue.is_empty() {
-        info!("Remaining {} bucket to take", bucket_queue.len());
-
         if threads.is_full() {
-            info!("Stack is full !");
             if !threads.wait_for_free() {
-                info!("No available thread");
                 continue;
             }
-            info!("A bucket has been freed");
         }
-
         let now = std::time::Instant::now();
         let t_scene = scene.clone();
         let mut t_buckets_queue = bucket_queue.clone();
-        let render_bucket = t_buckets_queue.pop();
-        let thread_output = locatedResult.clone();
+        let mut t_final_image = final_image.clone();
         let render_th = thread::spawn(move || {
-            let th_result = RtThRenderScene(&t_scene, render_bucket);
+            let mut render_bucket = t_buckets_queue.pop();
+            RtRenderBucket(&t_scene, &mut render_bucket);
+            let bucket_result = render_bucket.result;
             // Add result to final image
-            let mut output = thread_output.lock().unwrap();
-            for x in 0..output.width {
-                for y in 0..output.height {
-                    let updated_color = output.rt_get_pixel_color(x, y) + th_result.rt_get_pixel_color(x, y);
-                    // info!("{} {} -> {}", x, y, updated_color);
-                    output.set_pixel_color(x, y, updated_color);
+            let mut thread_output = t_final_image.lock().unwrap();
+            for x in 0..bucket_result.width {
+                for y in 0..bucket_result.height {
+                    let add_color = bucket_result.get_pixel_color(x, y);
+                    thread_output.add_pixel_color(
+                        x + bucket_result.x_offset,
+                        y + bucket_result.y_offset,
+                        add_color
+                    );
                 }
             }
         });
         threads.add(render_th);
     }
+    info!("Joining...");
     threads.join();
 
-    let final_output = locatedResult.clone();
-    let output = final_output.lock().unwrap();
+    let final_output = final_image.lock().unwrap();
     for x in 0..result.width {
         for y in 0..result.height {
-            let color = output.rt_get_pixel_color(x, y);
+            let color = final_output.get_pixel_color(x, y);
             let ccColor = RtRGBA::from_rgb(
                 linear_to_gamma(color.r), 
                 linear_to_gamma(color.g), 
                 linear_to_gamma(color.b) 
             );
-            // info!("{} {} -> {}", x, y, ccColor);
             result.set_pixel_color(x, y, ccColor);
         }
     }
