@@ -45,3 +45,16 @@ Options:
   -h, --help                   Print help
   -V, --version                Print version
 ```
+
+## Next steps
+- Finish first version of Raito :
+  - Add real progressive rendering
+  - Implement polymesh nodes for complete set of geometry
+  - Implement BVH
+- Start second iteration :
+  - Focus on improving the UI. The end goal is to make an easy-to-use tool for shader development with best performances possible
+  - Rework on the code base with what I learned in Rust
+  - Provide node graph to build scenes
+  - ...
+- Third iteration will focus on shader development
+- Fourth iteration will focus on developping new iterators and optimizations, like photon mapping, VCM, etc
