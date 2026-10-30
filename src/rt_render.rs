@@ -9,7 +9,7 @@ use std::borrow::BorrowMut;
 use std::f32::NAN;
 use std::collections::{BinaryHeap, VecDeque};
 use std::sync::{Mutex, Condvar};
-use std::thread::JoinHandle;
+use std::thread::{JoinHandle, ThreadId};
 use std::{ thread, time::Duration };
 use std::sync::{Arc, LockResult, RwLock, RwLockReadGuard, RwLockWriteGuard, MutexGuard};
 
@@ -164,52 +164,41 @@ pub fn RtTraceToLights(scene: &RtScene, ray: &RtRay) -> Option<RtHit> {
 // ========================================
 
 pub struct RtRenderQueue {
-    data: Mutex<BinaryHeap<RtRenderBucket>>,
-    cv: Condvar,
-    remaining_buckets: u16
+    pool: Mutex<BinaryHeap<RtRenderBucket>>
 }
 
 impl RtRenderQueue {
-    const MAX_TRHEADS: usize = 8;
-
-    fn new(scene: &RtScene) -> Self {
-        let mode = RtBucketMode::BUCKET_MODE_TOP;
-        let bucket_size = [100, 100];
-        let buckets = RtRenderBucket::get_bucket_list(scene.get_camera(), mode, bucket_size);
-        let nb_buckets = buckets.len();
+    fn new(scene: &RtScene, b_mode: RtBucketMode, b_size: [u16; 2]) -> Self {
+        let buckets = RtRenderBucket::get_bucket_list(scene.get_camera(), b_mode, b_size);
         let mut queue = Self { 
-            data: Mutex::new(BinaryHeap::from(buckets)),
-            cv: Condvar::new(),
-            remaining_buckets: nb_buckets as u16
+            pool: Mutex::new(BinaryHeap::from(buckets))
         };
         queue
     }
 
-    /// Adds an element to the back of the queue
-    fn push(&self, value: RtRenderBucket) {
-        let mut data = self.data.lock().unwrap();
-        data.push(value);
-        self.cv.notify_one();
-    }
-    
-    /// Removes an element from the front of the queue
-    fn pop(&self) -> RtRenderBucket {
-        let mut data = self.data.lock().unwrap();
-        // wait for the notification if the queue is empty
-        while data.is_empty() {
-            data = self.cv.wait(data).unwrap();
-        }
-        data.pop().unwrap()
-    }
-    
     fn len(&self) -> usize {
-        let data = self.data.lock().unwrap();
-        data.len()
+        let mut pool = self.pool.lock().unwrap();
+        pool.len()
     }
-    
+
+    fn release(&self) {
+        let mut pool = self.pool.lock().unwrap();
+        // TODO : here we can add back the bucket we just finished 
+        //        if we need other samples on it
+    }
+
+    fn pop(&self) -> Option<RtRenderBucket> {
+        let mut pool = self.pool.lock().unwrap();
+        if pool.is_empty() {
+            None
+        } else {
+            Some(pool.pop().unwrap())
+        }
+    }
+
     fn is_empty(&self) -> bool {
-        let data = self.data.lock().unwrap();
-        data.is_empty()
+        let pool = self.pool.lock().unwrap();
+        pool.is_empty()
     }
 }
 
@@ -218,72 +207,113 @@ impl RtRenderQueue {
 //  Render Thread Stack
 // ========================================
 
-struct RtThreadsStack {
-    threads: VecDeque<(JoinHandle<()>)>,
+struct RtThreadId {
+    handle: JoinHandle<()>,
+    tid: u8,
 }
 
-impl RtThreadsStack {
-    const MAX_TRHEADS: usize = 8;
+struct RtThreadUsed {
+    threads: Vec<RtThreadId>,
+    nb_threads: usize,
+}
 
-    fn new(width: usize, height: usize) -> Self {
+impl RtThreadUsed {
+    fn new(nb_threads: usize) -> Self {
         Self {
-            threads: VecDeque::new(),
+            threads: Vec::new(), 
+            nb_threads
         }
-    }
-
-    fn add(&mut self, handle: JoinHandle<()>) {
-        self.threads.push_back(handle);
-    }
-
-    fn is_full(&self) -> bool {
-        self.threads.len() > Self::MAX_TRHEADS
     }
 
     fn is_empty(&self) -> bool {
-        self.threads.len() == 0
+        self.threads.is_empty()
     }
 
-    fn wait_for_thread(&mut self, tid: usize) -> bool {
-        let thread = self.threads.remove(tid);
-        if thread.is_none() {
-            true
-        } else {
-            let thread = thread.unwrap();
-            if thread.is_finished() {
-                debug!("Waiting for thread {tid}");
-                thread.join().unwrap();
-                // debug!("Thread {tid} finished");
-                true
-            } else {
-                // Put the thread in the queue again
-                self.threads.insert(tid, thread);
-                false
-            }
-        }
+    fn is_full(&self) -> bool {
+        self.threads.len() >= self.nb_threads
     }
 
-    fn wait_for_free(&mut self) -> bool {
-        if self.threads.len() < Self::MAX_TRHEADS {
-            return true;
-        }
-        for tid in 0..Self::MAX_TRHEADS {
-            if self.wait_for_thread(tid) {
-                return true
+    fn push_handle(&mut self, handle: JoinHandle<()>) {
+        self.threads.push(RtThreadId { 
+            handle, 
+            tid: self.threads.len().try_into().unwrap() 
+        });
+    }
+
+    fn close_finished(&mut self) {
+        let mut tid = 0;
+        let mut is_finished = false;
+        for t_ in &self.threads {
+            if t_.handle.is_finished() {
+                is_finished = true;
+                break;
             }
+            tid += 1;
         }
-        false
+        if is_finished {
+            let removed = self.threads.remove(tid);
+            removed.handle.join();
+        }
     }
 
     fn join(&mut self) {
-        for tid in 0..Self::MAX_TRHEADS {
-            let thread = self.threads.remove(tid);
-            if thread.is_some() {
-                debug!("Wait for thread {}", tid);
-                let thread = thread.unwrap();
-                thread.join().unwrap();
-            }
+        while !self.threads.is_empty() {
+            let removed = self.threads.pop().unwrap();
+            removed.handle.join();
         }
-        debug!("Finished threads !");
+    }
+
+    fn pop(&mut self) -> Option<RtThreadId> {
+        self.threads.pop()
+    }
+}
+
+struct RtThreadsStack {
+    threads: Mutex<RtThreadUsed>, 
+    cv: Condvar,
+}
+
+impl RtThreadsStack {
+    fn new(nb_threads: usize) -> Self {
+        Self {
+            threads: Mutex::new(RtThreadUsed::new(nb_threads)),
+            cv: Condvar::new(),
+        }
+    }
+
+    fn push(&self, handle: JoinHandle<()>) {
+        let mut threads = self.threads.lock().unwrap();
+        threads.push_handle(handle);
+    }
+
+    /// Notify that a thread has finished
+    fn finish(&self) {
+        debug!("A thread has finished !");
+        self.cv.notify_one();
+    }
+
+    fn is_full(&self) -> bool {
+        let threads = self.threads.lock().unwrap();
+        threads.is_full()
+    }
+
+    fn is_empty(&self) -> bool {
+        let threads = self.threads.lock().unwrap();
+        threads.is_empty()
+    }
+
+    fn wait_for_free(&self) {
+        let mut threads = self.threads.lock().unwrap();
+        // wait for the notification if the queue is empty
+        while threads.is_full() {
+            threads = self.cv.wait(threads).unwrap();
+            threads.close_finished();
+        }
+    }
+
+    fn join(&self) {
+        let mut threads = self.threads.lock().unwrap();
+        threads.join();
     }
 }
 
@@ -330,49 +360,63 @@ fn RtRenderBucket(scene: &RtScene, mut bucket: &mut RtRenderBucket) {
     }
 }
 
+const NB_THREADS: usize = 8;
+const BUCKET_MODE: RtBucketMode = RtBucketMode::BUCKET_MODE_TOP;
+const BUCKET_SIZE: [u16; 2] = [100, 100];
+
 pub fn RtRenderScene(scene: RtScene, result: &mut RtRenderResult) {
     // Build the list of buckets
     debug!("Creating bucket queue");
-    let mut bucket_queue = Arc::new(RtRenderQueue::new(&scene));
+    let mut bucket_queue = Arc::new(RtRenderQueue::new(&scene, BUCKET_MODE, BUCKET_SIZE));
     debug!("Bucket queue created with {} elements", bucket_queue.len());
-
+    // Arc for the scene
     let scene = Arc::new(scene);
-    
-    let mut threads = RtThreadsStack::new(result.width, result.height);
+    // Thread stack
+    let mut threadStack = Arc::new(RtThreadsStack::new(NB_THREADS));
+    // Final image
     let mut final_image = Arc::new(Mutex::new(
         RtRenderResult::new(result.width, result.height, 0, 0)
     ));
+
     while !bucket_queue.is_empty() {
-        if threads.is_full() {
-            if !threads.wait_for_free() {
-                continue;
-            }
-        }
-        let now = std::time::Instant::now();
+        // Wait for a free thread
+        threadStack.wait_for_free();
+        // Clone things to pass to thread
+        let mut t_stack = threadStack.clone();
         let t_scene = scene.clone();
         let mut t_buckets_queue = bucket_queue.clone();
         let mut t_final_image = final_image.clone();
+        // Spawn thread
         let render_th = thread::spawn(move || {
             let mut render_bucket = t_buckets_queue.pop();
-            RtRenderBucket(&t_scene, &mut render_bucket);
-            let bucket_result = render_bucket.result;
-            // Add result to final image
-            let mut thread_output = t_final_image.lock().unwrap();
-            for x in 0..bucket_result.width {
-                for y in 0..bucket_result.height {
-                    let add_color = bucket_result.get_pixel_color(x, y);
-                    thread_output.add_pixel_color(
-                        x + bucket_result.x_offset,
-                        y + bucket_result.y_offset,
-                        add_color
-                    );
+            if render_bucket.is_none() {
+                warn!("Thread finished without doing anything");
+                t_stack.finish();
+            } else {
+                let mut render_bucket = render_bucket.unwrap();
+                RtRenderBucket(&t_scene, &mut render_bucket);
+                let bucket_result = render_bucket.result;
+                // Add result to final image
+                let mut thread_output = t_final_image.lock().unwrap();
+                for x in 0..bucket_result.width {
+                    for y in 0..bucket_result.height {
+                        let add_color = bucket_result.get_pixel_color(x, y);
+                        thread_output.add_pixel_color(
+                            x + bucket_result.x_offset,
+                            y + bucket_result.y_offset,
+                            add_color
+                        );
+                    }
                 }
+                t_stack.finish();
             }
         });
-        threads.add(render_th);
+        threadStack.push(render_th);
     }
+
     info!("Joining...");
-    threads.join();
+    threadStack.join();
+    info!("Finished joining !");
 
     let final_output = final_image.lock().unwrap();
     for x in 0..result.width {
