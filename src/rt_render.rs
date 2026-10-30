@@ -362,7 +362,7 @@ fn RtRenderBucket(scene: &RtScene, mut bucket: &mut RtRenderBucket) {
 
 const NB_THREADS: usize = 8;
 const BUCKET_MODE: RtBucketMode = RtBucketMode::BUCKET_MODE_TOP;
-const BUCKET_SIZE: [u16; 2] = [100, 100];
+const BUCKET_SIZE: [u16; 2] = [50, 50];
 
 pub fn RtRenderScene(scene: RtScene, result: &mut RtRenderResult) {
     // Build the list of buckets
@@ -390,7 +390,7 @@ pub fn RtRenderScene(scene: RtScene, result: &mut RtRenderResult) {
         let render_th = thread::spawn(move || {
             let mut render_bucket = t_buckets_queue.pop();
             if render_bucket.is_none() {
-                warn!("Thread finished without doing anything");
+                debug!("Thread finished without doing anything");
                 t_stack.finish();
             } else {
                 let mut render_bucket = render_bucket.unwrap();
@@ -414,9 +414,7 @@ pub fn RtRenderScene(scene: RtScene, result: &mut RtRenderResult) {
         threadStack.push(render_th);
     }
 
-    info!("Joining...");
     threadStack.join();
-    info!("Finished joining !");
 
     let final_output = final_image.lock().unwrap();
     for x in 0..result.width {
