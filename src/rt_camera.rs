@@ -5,10 +5,13 @@
 ///   Defines a camera
 /// =====================================================
 
+use log::info;
+
 use crate::rt_types::*;
 use crate::rt_ray::*;
 use crate::rt_shader_globals::*;
 use crate::rt_sampler::*;
+use crate::RtRenderResult;
 
 /// Describes a camera
 /// 
@@ -117,12 +120,29 @@ pub struct RtRenderBucket {
     left_coordinate: u16,
     width: u16,
     height: u16,
-    samples_nb: u16
+    samples_nb: u16,
+    result: RtRenderResult
 }
 
 impl RtRenderBucket {
     pub fn new(top: u16, left: u16, width: u16, height: u16, samples_nb: u16) -> RtRenderBucket {
-        RtRenderBucket { top_coordinate: top, left_coordinate: left, width, height, samples_nb }
+        RtRenderBucket { 
+            top_coordinate: top, left_coordinate: left, width, height, samples_nb,
+            result: RtRenderResult::new(usize::from(width), usize::from(height))
+        }
+    }
+
+    pub fn display(&self) {
+        info!("<Bucket ({}, {}), width={}, height={}>", 
+            self.top_coordinate, self.left_coordinate, self.width, self.height);
+    }
+
+    pub fn write_pixel(&mut self, x: usize, y: usize, color: RtRGBA) {
+        self.result.set_pixel_color(x, y, color);
+    }
+
+    pub fn read_pixel(&self, x: usize, y: usize) -> RtRGBA {
+        self.result.rt_get_pixel_color(x, y)
     }
 }
 

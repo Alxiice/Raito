@@ -37,7 +37,7 @@ impl ObjectParams {
 //  Object
 // ========================================
 
-pub trait RtObject {
+pub trait RtObject: Send + Sync {
     /// Get object parameters
     fn getObjectParams(&self) -> &ObjectParams;
     

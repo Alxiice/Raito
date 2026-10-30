@@ -39,7 +39,9 @@ fn test_buckets() {
     let scene = scene.unwrap();
     let mut result = RtRenderResult::new(RT_DEFAULT_WINDOW_WIDTH, RT_DEFAULT_WINDOW_HEIGHT);
 
-    RtRenderScene(&scene, &mut result);
+    let now = std::time::Instant::now();
+    RtRenderScene(scene, &mut result);
+    info!("Render finished in {} sec", now.elapsed().as_secs_f64());
 }
 
 

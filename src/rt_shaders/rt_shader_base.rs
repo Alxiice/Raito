@@ -10,7 +10,7 @@ use crate::rt_types::*;
 use crate::rt_scene::*;
 
 
-pub trait RtShader {
+pub trait RtShader: Send + Sync {
     // We need a cloning function on this trait for the XML scene parsing
     fn clone_dyn(&self) -> Box<dyn RtShader>;
 

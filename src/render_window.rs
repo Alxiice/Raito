@@ -293,15 +293,15 @@ impl RaitoRenderApp {
     }
 
     fn render(&mut self) -> bool {
-        let scene = self.scene.as_ref();
-        if scene.is_some() {
-            RtRenderScene(scene.unwrap(), &mut self.result);
-        } else {
-            error!("No scene to render !");
-            self.parameters.ipr_enabled = false;  // Make sure to disable IPR
-            return false;
-        }
-        self.update_image();
+        // let scene = self.scene.as_ref();
+        // if scene.is_some() {
+        //     RtRenderScene(scene.unwrap(), &mut self.result);
+        // } else {
+        //     error!("No scene to render !");
+        //     self.parameters.ipr_enabled = false;  // Make sure to disable IPR
+        //     return false;
+        // }
+        // self.update_image();
         true
     }
 

@@ -1,3 +1,4 @@
+use std::borrow::{Borrow, BorrowMut};
 /// =====================================================
 ///                    Raito Render
 /// 
@@ -8,7 +9,9 @@
 use std::f32::NAN;
 use std::collections::BinaryHeap;
 use std::sync::{Mutex, Condvar};
-use std::{ thread, sync::Arc, time::Duration };
+use std::thread::JoinHandle;
+use std::{ thread, time::Duration };
+use std::sync::{Arc, LockResult, RwLock, RwLockReadGuard, RwLockWriteGuard, MutexGuard};
 
 use log::info;
 
@@ -180,14 +183,14 @@ impl RtRenderQueue {
     }
 
     /// Adds an element to the back of the queue
-    fn push(&mut self, value: RtRenderBucket) {
+    fn push(&self, value: RtRenderBucket) {
         let mut data = self.data.lock().unwrap();
         data.push(value);
         self.cv.notify_one();
     }
     
     /// Removes an element from the front of the queue
-    fn pop(&mut self) -> RtRenderBucket {
+    fn pop(&self) -> RtRenderBucket {
         let mut data = self.data.lock().unwrap();
         // wait for the notification if the queue is empty
         while data.is_empty() {
@@ -220,7 +223,85 @@ fn linear_to_gamma(linear_component: f32) -> f32 {
     }
 }
 
-pub fn RtRenderScene(scene: &RtScene, result: &mut RtRenderResult) {
+// fn RtThRenderScene(scene: &RtScene, bucket: &RtRenderBucket, output: MutexGuard<'_, &mut RtRenderResult>) {
+fn RtThRenderScene(scene: &RtScene, bucket: RtRenderBucket, output: Mutex<RtRenderResult>) {
+    let inv_nb_spp: f32 = 1.0 / (scene.settings.render_spp as f32);
+
+    let render_bucket = &bucket;
+    render_bucket.display();
+
+    let cam_rays = RtBucketRayIterator::new(render_bucket);
+    for camera_ray in cam_rays {
+        let mut pixelColor = RtRGBA::BLACK;
+        // TODO
+        // If we are in progressive mode compute only 1 SPP per bucket
+        // if we are not, compute all SPP on the first bucket
+        let spp_nb = scene.settings.render_spp;
+        for _ in 0..spp_nb {
+            let ray = camera_ray.get_ray(scene.get_camera());
+            let hit = RtTraceRay(scene, &ray);
+            if hit.is_some() {
+                let hitResult = hit.unwrap();
+                pixelColor += hitResult.colorOutput * inv_nb_spp;
+            } else {
+                pixelColor += RtRGBA::ERRCOLOR  * inv_nb_spp;
+            }
+        }
+        let outColor = RtRGBA::from_rgb(
+            linear_to_gamma(pixelColor.r), 
+            linear_to_gamma(pixelColor.g), 
+            linear_to_gamma(pixelColor.b) 
+        );
+        output.lock().unwrap().set_pixel_color(camera_ray.x(), camera_ray.y(), pixelColor);
+    }
+    info!("Finished !");
+}
+
+
+struct RtThreadsStack {
+    threads: Vec<JoinHandle<()>>
+}
+
+impl RtThreadsStack {
+    const MAX_TRHEADS: usize = 10;
+
+    fn new() -> Self {
+        Self {
+            threads: Vec::new()
+        }
+    }
+
+    fn add(&mut self, value: JoinHandle<()>) {
+        self.threads.push(value);
+    }
+
+    fn is_full(&self) -> bool {
+        self.threads.len() > Self::MAX_TRHEADS
+    }
+
+    fn wait_for_free(&mut self) -> bool {
+        let mut tix = 0;
+        for thread in self.threads {
+            if thread.is_finished() {
+                thread.join();
+                self.threads.remove(tix);
+                return true
+            }
+            tix += 1;
+        }
+        false
+    }
+
+    fn join(&mut self) {
+        for thread in self.threads {
+            thread.join().unwrap();
+        }
+        info!("Finished threads !");
+    }
+}
+
+
+pub fn RtRenderScene(scene: RtScene, result: &mut RtRenderResult) {
     // TODO : for now the camera
     // - center is at 0
     // - direction is towards the -y direction
@@ -232,35 +313,33 @@ pub fn RtRenderScene(scene: &RtScene, result: &mut RtRenderResult) {
 
     // Build the list of buckets
     info!("Creating bucket queue");
-    let mut bucket_queue = RtRenderQueue::new(scene);
+    let mut bucket_queue = Arc::new(RtRenderQueue::new(&scene));
     info!("Bucket queue created with {} elements", bucket_queue.len());
+
+    let scene = Arc::new(scene);
     
+    // let mut threads: Vec<JoinHandle<()>> = Vec::new();
+    let mut threads = RtThreadsStack::new();
     while !bucket_queue.is_empty() {
-        let bucket = bucket_queue.pop();
-        thread::spawn(|| {
-            let cam_rays = RtBucketRayIterator::new(&bucket);
-            for camera_ray in cam_rays {
-                let mut pixelColor = RtRGBA::BLACK;
-                // TODO
-                // If we are in progressive mode compute only 1 SPP per bucket
-                // if we are not, compute all SPP on the first bucket
-                for _ in 0..scene.settings.render_spp {
-                    let ray = camera_ray.get_ray(scene.get_camera());
-                    let hit = RtTraceRay(scene, &ray);
-                    if hit.is_some() {
-                        let hitResult = hit.unwrap();
-                        pixelColor += hitResult.colorOutput * inv_nb_spp;
-                    } else {
-                        pixelColor += RtRGBA::ERRCOLOR  * inv_nb_spp;
-                    }
-                }
-                let outColor = RtRGBA::from_rgb(
-                    linear_to_gamma(pixelColor.r), 
-                    linear_to_gamma(pixelColor.g), 
-                    linear_to_gamma(pixelColor.b) 
-                );
-                result.set_pixel_color(camera_ray.x(), camera_ray.y(), outColor);
+        if threads.is_full() {
+            info!("Stack is full !");
+            if !threads.wait_for_free() {
+                continue;
             }
+            info!("A bucket has been freed");
+        }
+
+        let now = std::time::Instant::now();
+        let t_scene = scene.clone();
+        let mut t_buckets_queue = bucket_queue.clone();
+        let mut output = RtRenderResult::new(result.width, result.height);
+        let mut locatedResult = Mutex::new(output);
+        let render_th = thread::spawn(move || {
+            let render_bucket = t_buckets_queue.pop();
+            RtThRenderScene(&t_scene, render_bucket, locatedResult);
         });
+        // render_th.join();
+        threads.add(render_th);
     }
+    threads.join();
 }
