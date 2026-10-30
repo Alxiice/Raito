@@ -14,6 +14,7 @@ use crate::rt_objects::rt_object_base::*;
 //  Define objects
 // ========================================
 
+#[derive(Clone)]
 pub struct RtSphere {
     pub object_params: ObjectParams,
     pub center: RtPoint3,
@@ -37,6 +38,10 @@ pub enum RtGeometryTypes {
 impl RtObject for RtSphere {
     fn getObjectParams(&self) -> &ObjectParams {
         &self.object_params
+    }
+
+    fn clone_box(&self) -> Box<dyn RtObject> {
+        Box::new(self.clone())
     }
     
     fn get_intersection(&self, ray: &RtRay) -> Option<RtRayHit> {

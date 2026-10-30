@@ -16,6 +16,7 @@ use self::rt_shader_base::RtShader;
 //  Object parameters
 // ========================================
 
+#[derive(Clone)]
 pub struct ObjectParams {
     pub name: String,
     pub object_type: String,
@@ -40,7 +41,10 @@ impl ObjectParams {
 pub trait RtObject: Send + Sync {
     /// Get object parameters
     fn getObjectParams(&self) -> &ObjectParams;
-    
+
+    // For cloning scene
+    fn clone_box(&self) -> Box<dyn RtObject>;
+
     /// Get object name
     fn get_name(&self) -> String {
         self.getObjectParams().name.clone()
@@ -89,8 +93,15 @@ pub trait RtObject: Send + Sync {
 // ========================================
 
 // Define type linked to a list of object
+#[derive(Clone)]
 pub struct RtObjectList(Vec<Box<dyn RtObject>>);
 // Or : pub struct RtObjectList<'a>(Vec<Box<&'a dyn RtObject>>);
+
+impl Clone for Box<dyn RtObject> {
+    fn clone(&self) -> Box<dyn RtObject> {
+        self.clone_box()
+    }
+}
 
 impl RtObjectList {
     pub fn new() -> Self {

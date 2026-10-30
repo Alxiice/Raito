@@ -16,6 +16,7 @@ use crate::RtRenderResult;
 /// Describes a camera
 /// 
 /// Right handed system
+#[derive(Clone, Debug)]
 pub struct RtCamera {
     pub image_width : u16, 
     pub image_height: u16,

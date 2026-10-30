@@ -31,7 +31,7 @@ fn test_xml() {
 }
 
 fn test_buckets() {
-    let path = "/home/alice/Documents/PROJECTS/RaitoRender/Raito/tests/scenes/scene_000.xml";
+    let path = "/datas/sonoleta/github/Raito/tests/scenes/scene_000.xml";
     let scene = open_xml_scene(path);
     if scene.is_none() {
         panic!("Test failed");

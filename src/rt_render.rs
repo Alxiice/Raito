@@ -295,12 +295,10 @@ impl RtThreadsStack {
         }
     }
 
-    fn join_and_get_output(&mut self, thread: (JoinHandle<()>, Arc<Mutex<RtRenderResult>>)) {
-        thread.0.join();
-        // TODO ???
-        // let result = thread.1.lock().unwrap();
-        // self.update_result(&thread.1.as_ref().lock().unwrap());
-        // info!("Finished thread");
+    fn update_output(&mut self, result: Arc<Mutex<RtRenderResult>>) {
+        let result = result.lock().unwrap();
+        self.update_result(&result);
+        info!("Finished thread");
     }
 
     fn wait_for_thread(&mut self, tid: usize) -> bool {
@@ -315,7 +313,8 @@ impl RtThreadsStack {
             let thread = thread.unwrap();
             if thread.0.is_finished() {
                 info!("one finished !");
-                self.join_and_get_output(thread);
+                self.update_output(thread.1.clone());
+                thread.0.join().unwrap();
                 true
             } else {
                 // Put the thread in the queue again
@@ -342,7 +341,8 @@ impl RtThreadsStack {
             if thread.is_some() {
                 let thread = thread.unwrap();
                 if thread.0.is_finished() {
-                    self.join_and_get_output(thread);
+                    self.update_output(thread.1.clone());
+                    thread.0.join().unwrap();
                 }
             }
         }
@@ -374,7 +374,7 @@ pub fn RtRenderScene(scene: RtScene, result: &mut RtRenderResult) {
         if threads.is_full() {
             info!("Stack is full !");
             if !threads.wait_for_free() {
-                info!("No ailabel thread");
+                info!("No available thread");
                 continue;
             }
             info!("A bucket has been freed");
@@ -394,4 +394,12 @@ pub fn RtRenderScene(scene: RtScene, result: &mut RtRenderResult) {
         threads.add(render_th, thread_output);
     }
     threads.join();
+
+    let output = threads.final_output.lock().unwrap();
+    for x in 0..result.width {
+        for y in 0..result.height {
+            result.set_pixel_color(x, y, output.rt_get_pixel_color(x, y));
+        }
+    }
+
 }
