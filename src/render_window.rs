@@ -208,7 +208,7 @@ impl Default for RaitoRenderApp {
             parameters: RtParameters::default(),
             scene: None,
             result: RtRenderResult::new(
-                RT_DEFAULT_WINDOW_WIDTH, RT_DEFAULT_WINDOW_HEIGHT),
+                RT_DEFAULT_WINDOW_WIDTH, RT_DEFAULT_WINDOW_HEIGHT, 0, 0),
             color_image: ColorImage::new(
                 [RT_DEFAULT_WINDOW_WIDTH, RT_DEFAULT_WINDOW_HEIGHT], DEFAULT_COLOR),
             opening_file_status: OpeningFileStatus::None,
@@ -234,8 +234,7 @@ impl RaitoRenderApp {
     fn update_image(&mut self) {
         for y in 0..self.result.height {
             for x in 0..self.result.width {
-                // self.color_image[(x, self.result.height - y - 1)] = self.result.get_pixel_color(x, y);
-                self.color_image[(x, y)] = self.result.get_pixel_color(x, y);
+                self.color_image[(x, y)] = self.result.get_pixel_color(x, y).to_color32();
             }
         }
     }
@@ -248,7 +247,7 @@ impl RaitoRenderApp {
             self.parameters.look_from,
             self.parameters.look_at,
             RtVec3::new(0.0, 1.0, 0.0));
-        self.scene = Some(get_default_scene_1(settings, camera));
+        self.scene = Some(get_default_scene_0(settings, camera));
     }
 
     pub fn open_scene(&mut self, path: PathBuf) -> bool {

@@ -37,7 +37,7 @@ fn test_buckets() {
         panic!("Test failed");
     }
     let scene = scene.unwrap();
-    let mut result = RtRenderResult::new(RT_DEFAULT_WINDOW_WIDTH, RT_DEFAULT_WINDOW_HEIGHT);
+    let mut result = RtRenderResult::new(RT_DEFAULT_WINDOW_WIDTH, RT_DEFAULT_WINDOW_HEIGHT, 0, 0);
 
     let now = std::time::Instant::now();
     RtRenderScene(scene, &mut result);
