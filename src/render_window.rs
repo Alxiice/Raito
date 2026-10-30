@@ -248,7 +248,7 @@ impl RaitoRenderApp {
             self.parameters.look_from,
             self.parameters.look_at,
             RtVec3::new(0.0, 1.0, 0.0));
-        self.scene = Some(get_default_scene_0(settings, camera));
+        self.scene = Some(get_default_scene_1(settings, camera));
     }
 
     pub fn open_scene(&mut self, path: PathBuf) -> bool {
