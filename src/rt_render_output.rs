@@ -65,8 +65,17 @@ impl RtRenderResult {
         self.render_grid[y][x]
     }
     
-    pub fn export_as_ppm(&self) {
-        // TODO
-        error!("Function export_as_ppm not implemented yet");
+    /// Write the render as a binary PPM (P6) image
+    /// Warning ! Use only when the image top & left is 0
+    pub fn export_as_ppm(&self, path: &str) -> std::io::Result<()> {
+        let mut data = format!("P6\n{} {}\n255\n", self.width, self.height).into_bytes();
+        data.reserve(self.width * self.height * 3);
+        for y in 0..self.height {
+            for x in 0..self.width {
+                let color = self.get_pixel_color(x, y).to_color32();
+                data.extend_from_slice(&[color.r(), color.g(), color.b()]);
+            }
+        }
+        std::fs::write(path, data)
     }
 }

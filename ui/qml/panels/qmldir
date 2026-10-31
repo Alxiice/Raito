@@ -1,0 +1,7 @@
+NodeGraphPanel 1.0 NodeGraphPanel.qml
+NodeItem 1.0 NodeItem.qml
+Wire 1.0 Wire.qml
+NodeEditorPanel 1.0 NodeEditorPanel.qml
+SceneGraphPanel 1.0 SceneGraphPanel.qml
+AttributesPanel 1.0 AttributesPanel.qml
+ViewerPanel 1.0 ViewerPanel.qml

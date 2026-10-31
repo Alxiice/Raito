@@ -1,0 +1,5 @@
+singleton Theme 1.0 Theme.qml
+FloatField 1.0 FloatField.qml
+Vec3Field 1.0 Vec3Field.qml
+ColorField 1.0 ColorField.qml
+ToolIconButton 1.0 ToolIconButton.qml

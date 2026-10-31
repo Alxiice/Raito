@@ -18,8 +18,11 @@ mod render_window;
 mod rt_test;
 pub use rt_test::rt_test;
 pub use render_window::RaitoRenderApp;
-use log::info;
+use log::{info, error};
 use clap::{Parser, ValueEnum};
+use raito::rt_scene::open_xml_scene;
+use raito::rt_render::RtRenderScene;
+use raito::rt_render_output::RtRenderResult;
 
 const WINDOW_WIDTH: f32 = 710.0;
 const MIN_WINDOW_HEIGHT: f32 = 470.0;
@@ -36,6 +39,38 @@ pub struct RaitoArgs {
     /// Execute tests
     #[arg(short, long)]
     tests: bool,
+
+    /// Render an XML scene without opening the render window
+    #[arg(short, long, requires = "output")]
+    scene: Option<String>,
+
+    /// Output image (PPM) written by a headless render
+    #[arg(short, long, requires = "scene")]
+    output: Option<String>,
+}
+
+/// Render a scene file to an image without UI
+fn render_headless(scene_path: &str, output_path: &str) -> i32 {
+    let scene = match open_xml_scene(scene_path) {
+        Some(scene) => scene,
+        None => {
+            error!("Could not open scene {scene_path}");
+            return 1;
+        }
+    };
+    let camera = scene.get_camera();
+    let mut result = RtRenderResult::new(
+        camera.get_width() as usize, camera.get_height() as usize, 0, 0);
+
+    info!("Starting render");
+    let now = std::time::Instant::now();
+    RtRenderScene(scene, &mut result);
+    info!("Render finished in {} sec", now.elapsed().as_secs_f64());
+
+    match result.export_as_ppm(output_path) {
+        Ok(_) => { info!("Image written to {output_path}"); 0 },
+        Err(e) => { error!("Could not write {output_path} : {e}"); 1 }
+    }
 }
 
 /// Log levels
@@ -58,6 +93,10 @@ fn main() -> Result<(), eframe::Error> {
     if args.tests {
         rt_test();
         return Ok(());
+    }
+
+    if let (Some(scene), Some(output)) = (&args.scene, &args.output) {
+        std::process::exit(render_headless(scene, output));
     }
 
     let native_options = eframe::NativeOptions {
