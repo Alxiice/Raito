@@ -1,5 +1,6 @@
 """Node graph: nodes, connections, cooking and serialization"""
 
+import copy
 import json
 import re
 import uuid
@@ -179,7 +180,7 @@ class Graph:
             "viewNode": self.view_node,
             "nodes": [
                 {"id": n.node_id, "type": n.type_id, "name": n.name,
-                 "x": n.x, "y": n.y, "params": n.params}
+                 "x": n.x, "y": n.y, "params": copy.deepcopy(n.params)}
                 for n in self.nodes.values()
             ],
             "connections": [
