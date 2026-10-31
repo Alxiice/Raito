@@ -16,3 +16,5 @@ Additionnaly we ask developers to track down modifications to their related PR/I
   engine selector, in dockable panels that can float as separate windows
 - Headless render mode: `raito --scene <scene.xml> --output <image.ppm>`
 - `RtRenderResult::export_as_ppm` writes binary PPM images
+- Scene editor: undo / redo (`Ctrl+Z` / `Ctrl+Y`) of node graph and node editor changes
+- Scene editor: scenes are saved as `.rt` files

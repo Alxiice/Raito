@@ -34,7 +34,7 @@ From the repository root:
 
 ```bash
 python -m ui                     # opens Raito's reference scene
-python -m ui my_scene.json       # opens a saved node graph
+python -m ui my_scene.rt         # opens a saved scene
 python -m ui --reset-layout      # ignores the saved panel layout
 ```
 
@@ -54,9 +54,19 @@ python -m ui --reset-layout      # ignores the saved panel layout
 | Delete the selected node | `Delete` |
 | Pan / zoom | Middle drag or `Alt` + drag / mouse wheel |
 | Frame all nodes | `F` |
+| Undo / redo | `Ctrl+Z` / `Ctrl+Y` (or `Ctrl+Shift+Z`) |
 
 Port colors give their type: white ports carry scenes, purple ports carry
 materials. Only ports of the same type can be connected.
+
+### Undo / redo
+
+**Edit > Undo** (`Ctrl+Z`) and **Edit > Redo** (`Ctrl+Y`) cover every change
+to the scene made in the node graph and the node editor: creating, deleting,
+moving, renaming and connecting nodes, editing parameters and changing the
+viewed node. A node drag, a wire moved to another port, or a value scrubbed
+continuously is undone in one step. Opening or creating a scene clears the
+history.
 
 ### Number fields
 
@@ -89,8 +99,13 @@ actual size. The arrow in the status bar shows the render log.
 | Merge | Scene | Union of up to 4 input scenes |
 | RenderSettings | Render | Samples, bounces and render camera on `/root` |
 
-The node name is also the name of its location. Files are saved as JSON
-(**File > Save**).
+The node name is also the name of its location.
+
+## Scene files
+
+Scenes are saved as `.rt` files (**File > Save**), so file dialogs can filter
+them. A `.rt` file is a JSON document holding the nodes, their parameters and
+positions, the connections and the viewed node.
 
 ## Architecture
 
@@ -99,7 +114,8 @@ ui/
 ├── app.py               # Entry point: Qt application and QML engine
 ├── core/                # Qt independent model
 │   ├── nodes.py         # Node types: ports, parameters, cook functions
-│   ├── graph.py         # Graph editing, cooking, JSON serialization
+│   ├── graph.py         # Graph editing, cooking, .rt serialization
+│   ├── history.py       # Undo / redo stacks of graph snapshots
 │   └── scene.py         # Scene graph: locations and typed attributes
 ├── render/              # Render engines
 │   ├── engine.py        # RenderEngine interface and engine registry
@@ -120,6 +136,8 @@ ui/
 
 Data flows one way: QML calls slots on the backend, the backend edits the
 `core` graph, cooks the viewed node into a `Scene`, then notifies the views.
+Before each edit, `GraphController` stores a snapshot of the graph in the
+undo history. Undo and redo restore a snapshot.
 To render, the Raito engine writes the scene as Raito XML and runs the
 executable headless. The image is loaded back as a PPM.
 
