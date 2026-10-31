@@ -5,11 +5,14 @@ docs_dir: './source'
 use_directory_urls: false
 nav:
   - Introduction: 'index.md'
+  - Logo: 'logo.md'
   - Code documentation: '../rust/doc/raito/index.html'
 
 # Setup
 theme:
   name: material
+  logo: images/logo/raito-icon.svg
+  favicon: images/logo/png/raito-icon-32.png
   palette:
     scheme: slate
     primary: custom
