@@ -1,0 +1,16 @@
+# Raito Cargo Configuration
+# 
+# This project requires Visual Studio Build Tools with "Desktop development with C++" workload.
+# 
+# If you're using Git Bash, the GNU `link` command conflicts with MSVC's link.exe.
+# Solutions:
+# 1. Build from cmd.exe or PowerShell (recommended)
+# 2. Build from Visual Studio Developer Command Prompt
+# 3. From Git Bash, use: PATH="/c/Program Files (x86)/Microsoft Visual Studio/2022/Community/VC/Bin:$PATH" cargo build
+#
+# To install Visual Studio Build Tools:
+# Download from: https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022
+# Install with: "Desktop development with C++" workload
+
+[build]
+target-dir = "target"
