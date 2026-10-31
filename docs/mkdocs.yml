@@ -6,6 +6,10 @@ use_directory_urls: false
 nav:
   - Introduction: 'index.md'
   - Logo: 'logo.md'
+  - Engine core:
+    - Architecture: 'core/architecture.md'
+    - Extending the engine: 'core/extending.md'
+    - Known issues: 'core/known-issues.md'
   - Code documentation: '../rust/doc/raito/index.html'
 
 # Setup
