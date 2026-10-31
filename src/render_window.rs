@@ -208,7 +208,7 @@ impl Default for RaitoRenderApp {
             parameters: RtParameters::default(),
             scene: None,
             result: RtRenderResult::new(
-                RT_DEFAULT_WINDOW_WIDTH, RT_DEFAULT_WINDOW_HEIGHT),
+                RT_DEFAULT_WINDOW_WIDTH, RT_DEFAULT_WINDOW_HEIGHT, 0, 0),
             color_image: ColorImage::new(
                 [RT_DEFAULT_WINDOW_WIDTH, RT_DEFAULT_WINDOW_HEIGHT], DEFAULT_COLOR),
             opening_file_status: OpeningFileStatus::None,
@@ -234,8 +234,7 @@ impl RaitoRenderApp {
     fn update_image(&mut self) {
         for y in 0..self.result.height {
             for x in 0..self.result.width {
-                // self.color_image[(x, self.result.height - y - 1)] = self.result.get_pixel_color(x, y);
-                self.color_image[(x, y)] = self.result.get_pixel_color(x, y);
+                self.color_image[(x, y)] = self.result.get_pixel_color(x, y).to_color32();
             }
         }
     }
@@ -293,9 +292,18 @@ impl RaitoRenderApp {
     }
 
     fn render(&mut self) -> bool {
-        let scene = self.scene.as_ref();
-        if scene.is_some() {
-            RtRenderScene(scene.unwrap(), &mut self.result);
+        // let scene = self.scene.as_ref();
+        // if scene.is_some() {
+        //     RtRenderScene(scene.unwrap(), &mut self.result);
+        // } else {
+        //     error!("No scene to render !");
+        //     self.parameters.ipr_enabled = false;  // Make sure to disable IPR
+        //     return false;
+        // }
+        // self.update_image();
+        if self.scene.is_some() {
+            let scene = self.scene.as_ref().unwrap().clone();
+            RtRenderScene(scene, &mut self.result);
         } else {
             error!("No scene to render !");
             self.parameters.ipr_enabled = false;  // Make sure to disable IPR

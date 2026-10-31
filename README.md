@@ -2,7 +2,7 @@
 Raito Rendering engine
 
 <p align="center">
-  <img src="./docs/source/videos/pres-1.gif" />
+  <img src="./docs/source/videos/pres-1.gif" /><br/>
   <i>Raito RenderView UI with a sphere shaded with normals</i>
 </p>
 

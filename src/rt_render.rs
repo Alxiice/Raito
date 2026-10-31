@@ -1,3 +1,4 @@
+use std::borrow::BorrowMut;
 /// =====================================================
 ///                    Raito Render
 /// 
@@ -6,6 +7,14 @@
 /// =====================================================
 
 use std::f32::NAN;
+use std::collections::{BinaryHeap, VecDeque};
+use std::sync::{Mutex, Condvar};
+use std::thread::{JoinHandle, ThreadId};
+use std::{ thread, time::Duration };
+use std::sync::{Arc, LockResult, RwLock, RwLockReadGuard, RwLockWriteGuard, MutexGuard};
+
+use egui::output;
+use log::{ info, debug, warn };
 
 use crate::rt_types::*;
 use crate::rt_camera::*;
@@ -150,6 +159,169 @@ pub fn RtTraceToLights(scene: &RtScene, ray: &RtRay) -> Option<RtHit> {
 }
 
 
+// ========================================
+//  Render Queue
+// ========================================
+
+pub struct RtRenderQueue {
+    pool: Mutex<BinaryHeap<RtRenderBucket>>
+}
+
+impl RtRenderQueue {
+    fn new(scene: &RtScene, b_mode: RtBucketMode, b_size: [u16; 2]) -> Self {
+        let buckets = RtRenderBucket::get_bucket_list(scene.get_camera(), b_mode, b_size);
+        let mut queue = Self { 
+            pool: Mutex::new(BinaryHeap::from(buckets))
+        };
+        queue
+    }
+
+    fn len(&self) -> usize {
+        let mut pool = self.pool.lock().unwrap();
+        pool.len()
+    }
+
+    fn release(&self) {
+        let mut pool = self.pool.lock().unwrap();
+        // TODO : here we can add back the bucket we just finished 
+        //        if we need other samples on it
+    }
+
+    fn pop(&self) -> Option<RtRenderBucket> {
+        let mut pool = self.pool.lock().unwrap();
+        if pool.is_empty() {
+            None
+        } else {
+            Some(pool.pop().unwrap())
+        }
+    }
+
+    fn is_empty(&self) -> bool {
+        let pool = self.pool.lock().unwrap();
+        pool.is_empty()
+    }
+}
+
+
+// ========================================
+//  Render Thread Stack
+// ========================================
+
+struct RtThreadId {
+    handle: JoinHandle<()>,
+    tid: u8,
+}
+
+struct RtThreadUsed {
+    threads: Vec<RtThreadId>,
+    nb_threads: usize,
+}
+
+impl RtThreadUsed {
+    fn new(nb_threads: usize) -> Self {
+        Self {
+            threads: Vec::new(), 
+            nb_threads
+        }
+    }
+
+    fn is_empty(&self) -> bool {
+        self.threads.is_empty()
+    }
+
+    fn is_full(&self) -> bool {
+        self.threads.len() >= self.nb_threads
+    }
+
+    fn push_handle(&mut self, handle: JoinHandle<()>) {
+        self.threads.push(RtThreadId { 
+            handle, 
+            tid: self.threads.len().try_into().unwrap() 
+        });
+    }
+
+    fn close_finished(&mut self) {
+        let mut tid = 0;
+        let mut is_finished = false;
+        for t_ in &self.threads {
+            if t_.handle.is_finished() {
+                is_finished = true;
+                break;
+            }
+            tid += 1;
+        }
+        if is_finished {
+            let removed = self.threads.remove(tid);
+            removed.handle.join();
+        }
+    }
+
+    fn join(&mut self) {
+        while !self.threads.is_empty() {
+            let removed = self.threads.pop().unwrap();
+            removed.handle.join();
+        }
+    }
+
+    fn pop(&mut self) -> Option<RtThreadId> {
+        self.threads.pop()
+    }
+}
+
+struct RtThreadsStack {
+    threads: Mutex<RtThreadUsed>, 
+    cv: Condvar,
+}
+
+impl RtThreadsStack {
+    fn new(nb_threads: usize) -> Self {
+        Self {
+            threads: Mutex::new(RtThreadUsed::new(nb_threads)),
+            cv: Condvar::new(),
+        }
+    }
+
+    fn push(&self, handle: JoinHandle<()>) {
+        let mut threads = self.threads.lock().unwrap();
+        threads.push_handle(handle);
+    }
+
+    /// Notify that a thread has finished
+    fn finish(&self) {
+        debug!("A thread has finished !");
+        self.cv.notify_one();
+    }
+
+    fn is_full(&self) -> bool {
+        let threads = self.threads.lock().unwrap();
+        threads.is_full()
+    }
+
+    fn is_empty(&self) -> bool {
+        let threads = self.threads.lock().unwrap();
+        threads.is_empty()
+    }
+
+    fn wait_for_free(&self) {
+        let mut threads = self.threads.lock().unwrap();
+        // wait for the notification if the queue is empty
+        while threads.is_full() {
+            threads = self.cv.wait(threads).unwrap();
+            threads.close_finished();
+        }
+    }
+
+    fn join(&self) {
+        let mut threads = self.threads.lock().unwrap();
+        threads.join();
+    }
+}
+
+
+// ========================================
+//  Launch render
+// ========================================
+
 fn linear_to_gamma(linear_component: f32) -> f32 {
     if linear_component > 0.0 {
         linear_component.sqrt()
@@ -158,41 +330,102 @@ fn linear_to_gamma(linear_component: f32) -> f32 {
     }
 }
 
-
-/// Launch render on scene
-pub fn RtRenderScene(scene: &RtScene, result: &mut RtRenderResult) {
-    // TODO : for now the camera
-    // - center is at 0
-    // - direction is towards the -y direction
-    // 
-    // We want to be able to change that, move and rotate the camera
-    // We need to implement world and camera space
-
-    let inv_nb_spp: f32 = 1.0 / (scene.settings.render_spp as f32);
-
-    let cam_rays = RtCameraRayIterator::new(scene.get_camera());
-    for camera_ray in cam_rays {
+/// Render a bucket from the scene
+fn RtRenderBucket(scene: &RtScene, mut bucket: &mut RtRenderBucket) {
+    debug!("Bucket : {bucket}");
+    let cam_rays = RtBucketRayIterator::new(&bucket);
+    for pixel in cam_rays {
         let mut pixelColor = RtRGBA::BLACK;
-        for _ in 0..scene.settings.render_spp {
-            let ray = camera_ray.get_ray(scene.get_camera());
+        // TODO
+        // If we are in progressive mode compute only 1 SPP per bucket
+        // if we are not, compute all SPP on the first bucket
+        let spp_nb = scene.settings.render_spp;
+        for _ in 0..spp_nb {
+            let ray = pixel.get_ray(
+                scene.get_camera(), 
+                [
+                    bucket.left_coordinate, // Offset for X coordinate
+                    bucket.top_coordinate   // Offset for Y coordinate
+                ]
+            );
             let hit = RtTraceRay(scene, &ray);
             if hit.is_some() {
                 let hitResult = hit.unwrap();
-                pixelColor += hitResult.colorOutput * inv_nb_spp;
+                pixelColor += hitResult.colorOutput * scene.settings.inv_nb_spp;
             } else {
-                // let a = 0.5 * ray.dir.y + 1.0;
-                // let skyColor = (1.0 - a) * RtRGBA::WHITE + a * RtRGBA::from_rgb(0.5, 0.7, 1.0);
-                // pixelColor += skyColor * inv_nb_spp;
-                pixelColor += RtRGBA::ERRCOLOR  * inv_nb_spp;
+                pixelColor += RtRGBA::ERRCOLOR  * scene.settings.inv_nb_spp;
             }
         }
-        // panic!("Pixel : {} {}", camera_ray.x(), camera_ray.y());
-        let outColor = RtRGBA::from_rgb(
-            linear_to_gamma(pixelColor.r), 
-            linear_to_gamma(pixelColor.g), 
-            linear_to_gamma(pixelColor.b) 
-        );
+        bucket.write_pixel(pixel.pixel_x(), pixel.pixel_y(), pixelColor);
+    }
+}
 
-        result.set_pixel_color(camera_ray.x(), camera_ray.y(), outColor);
+const NB_THREADS: usize = 8;
+const BUCKET_MODE: RtBucketMode = RtBucketMode::BUCKET_MODE_TOP;
+const BUCKET_SIZE: [u16; 2] = [50, 50];
+
+pub fn RtRenderScene(scene: RtScene, result: &mut RtRenderResult) {
+    // Build the list of buckets
+    debug!("Creating bucket queue");
+    let mut bucket_queue = Arc::new(RtRenderQueue::new(&scene, BUCKET_MODE, BUCKET_SIZE));
+    debug!("Bucket queue created with {} elements", bucket_queue.len());
+    // Arc for the scene
+    let scene = Arc::new(scene);
+    // Thread stack
+    let mut threadStack = Arc::new(RtThreadsStack::new(NB_THREADS));
+    // Final image
+    let mut final_image = Arc::new(Mutex::new(
+        RtRenderResult::new(result.width, result.height, 0, 0)
+    ));
+
+    while !bucket_queue.is_empty() {
+        // Wait for a free thread
+        threadStack.wait_for_free();
+        // Clone things to pass to thread
+        let mut t_stack = threadStack.clone();
+        let t_scene = scene.clone();
+        let mut t_buckets_queue = bucket_queue.clone();
+        let mut t_final_image = final_image.clone();
+        // Spawn thread
+        let render_th = thread::spawn(move || {
+            let mut render_bucket = t_buckets_queue.pop();
+            if render_bucket.is_none() {
+                debug!("Thread finished without doing anything");
+                t_stack.finish();
+            } else {
+                let mut render_bucket = render_bucket.unwrap();
+                RtRenderBucket(&t_scene, &mut render_bucket);
+                let bucket_result = render_bucket.result;
+                // Add result to final image
+                let mut thread_output = t_final_image.lock().unwrap();
+                for x in 0..bucket_result.width {
+                    for y in 0..bucket_result.height {
+                        let add_color = bucket_result.get_pixel_color(x, y);
+                        thread_output.add_pixel_color(
+                            x + bucket_result.x_offset,
+                            y + bucket_result.y_offset,
+                            add_color
+                        );
+                    }
+                }
+                t_stack.finish();
+            }
+        });
+        threadStack.push(render_th);
+    }
+
+    threadStack.join();
+
+    let final_output = final_image.lock().unwrap();
+    for x in 0..result.width {
+        for y in 0..result.height {
+            let color = final_output.get_pixel_color(x, y);
+            let ccColor = RtRGBA::from_rgb(
+                linear_to_gamma(color.r), 
+                linear_to_gamma(color.g), 
+                linear_to_gamma(color.b) 
+            );
+            result.set_pixel_color(x, y, ccColor);
+        }
     }
 }
