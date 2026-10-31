@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/source/images/logo/raito-logo-dark.svg">
+    <img alt="Raito" src="./docs/source/images/logo/raito-logo-light.svg" width="360">
+  </picture>
+</p>
+
 # Raito
 
 Raito Rendering engine

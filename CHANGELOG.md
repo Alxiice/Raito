@@ -18,3 +18,7 @@ Additionnaly we ask developers to track down modifications to their related PR/I
 - `RtRenderResult::export_as_ppm` writes binary PPM images
 - Scene editor: undo / redo (`Ctrl+Z` / `Ctrl+Y`) of node graph and node editor changes
 - Scene editor: scenes are saved as `.rt` files
+- Raito logo (wordmark with dark / light text, app icon) as SVG, PNG and ICO in
+  `docs/source/images/logo`, a Logo page in the docs and `scripts/export_logo.py`
+  to regenerate the PNG / ICO files
+- Scene editor: Raito window icon
