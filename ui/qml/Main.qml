@@ -220,7 +220,7 @@ ApplicationWindow {
     FileDialog {
         id: openDialog
         title: "Open scene"
-        nameFilters: ["Raito scenes (*.json)", "All files (*)"]
+        nameFilters: ["Raito scenes (*.rt)", "All files (*)"]
         onAccepted: App.openScene(selectedFile)
     }
 
@@ -228,8 +228,8 @@ ApplicationWindow {
         id: saveDialog
         title: "Save scene"
         fileMode: FileDialog.SaveFile
-        defaultSuffix: "json"
-        nameFilters: ["Raito scenes (*.json)"]
+        defaultSuffix: "rt"
+        nameFilters: ["Raito scenes (*.rt)"]
         onAccepted: App.saveScene(selectedFile)
     }
 }

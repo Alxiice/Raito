@@ -12,6 +12,8 @@ from .scene import Scene
 
 
 FILE_VERSION = 1
+# Scene files are JSON documents with their own extension
+FILE_EXTENSION = ".rt"
 
 
 class GraphError(Exception):

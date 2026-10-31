@@ -60,7 +60,7 @@ class GraphTest(unittest.TestCase):
     def test_save_load_roundtrip(self):
         g = default_graph()
         with tempfile.TemporaryDirectory() as tmp:
-            path = os.path.join(tmp, "scene.json")
+            path = os.path.join(tmp, "scene.rt")
             g.save(path)
             loaded = Graph.load(path)
         self.assertEqual(loaded.to_dict(), g.to_dict())

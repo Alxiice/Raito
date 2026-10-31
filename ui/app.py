@@ -18,7 +18,7 @@ QML_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "qml")
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="raito-ui", description="Raito scene editor")
-    parser.add_argument("scene", nargs="?", help="Node graph file (.json) to open")
+    parser.add_argument("scene", nargs="?", help="Scene file (.rt) to open")
     parser.add_argument("--reset-layout", action="store_true",
                         help="Ignore the saved panel layout")
     args, qt_args = parser.parse_known_args(argv if argv is not None else sys.argv[1:])

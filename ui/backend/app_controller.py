@@ -4,7 +4,7 @@ import os
 
 from PySide6.QtCore import QObject, QTimer, QUrl, Property, Signal, Slot
 
-from ..core import Graph, Scene, default_graph
+from ..core import FILE_EXTENSION, Graph, Scene, default_graph
 from .graph_controller import GraphController
 from .params_model import ParamsModel
 from .render_controller import RenderController
@@ -103,6 +103,8 @@ class AppController(QObject):
         path = url.toLocalFile() if not url.isEmpty() else self._file
         if not path:
             return False
+        if not os.path.splitext(path)[1]:
+            path += FILE_EXTENSION
         try:
             self._graph.graph.save(path)
         except OSError as e:
