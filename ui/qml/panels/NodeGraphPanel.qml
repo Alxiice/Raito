@@ -81,6 +81,8 @@ Item {
     // === Wires ===
 
     function beginWire(nodeId, port, isInput, type, pos) {
+        // Picking up a wire and dropping it elsewhere is undone as one step
+        App.graph.beginInteraction()
         const item = nodeItems[nodeId]
         const ports = isInput ? item.inputs : item.outputs
         const index = ports.findIndex(p => p.name === port)
@@ -106,15 +108,12 @@ Item {
     function endWire(pos) {
         const wire = pendingWire
         pendingWire = null
-        if (!wire)
-            return
-        const target = findPort(pos, wire)
-        if (!target)
-            return
-        if (wire.fromOutput)
+        const target = wire ? findPort(pos, wire) : null
+        if (target && wire.fromOutput)
             App.graph.connectPorts(wire.node, wire.port, target.node, target.port)
-        else
+        else if (target)
             App.graph.connectPorts(target.node, target.port, wire.node, wire.port)
+        App.graph.endInteraction()
     }
 
     // Port under pos accepting the wire, or the best port of the node under pos
@@ -158,8 +157,8 @@ Item {
     }
 
     Connections {
-        target: App.graph.nodes
-        function onModelReset() { Qt.callLater(graphView.frameAll) }
+        target: App.graph
+        function onGraphReplaced() { Qt.callLater(graphView.frameAll) }
     }
 
     onWidthChanged: if (width > 0 && height > 0 && !framed) { framed = true; Qt.callLater(frameAll) }

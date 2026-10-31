@@ -50,7 +50,10 @@ Rectangle {
             }
             pressPos = mapToItem(node.graphView.canvas, mouse.x, mouse.y)
             startPos = Qt.point(node.posX, node.posY)
+            App.graph.beginInteraction()
         }
+        onReleased: App.graph.endInteraction()
+        onCanceled: App.graph.endInteraction()
         onPositionChanged: (mouse) => {
             if (!(pressedButtons & Qt.LeftButton))
                 return
@@ -173,6 +176,7 @@ Rectangle {
                         port.graph.updateWire(mapToItem(port.graph.canvas, mouse.x, mouse.y))
                 }
                 onReleased: (mouse) => port.graph.endWire(mapToItem(port.graph.canvas, mouse.x, mouse.y))
+                onCanceled: port.graph.endWire(Qt.point(-1e9, -1e9))
             }
         }
     }

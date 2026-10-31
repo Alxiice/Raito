@@ -46,6 +46,20 @@ ApplicationWindow {
         onTriggered: App.currentFile ? App.saveScene("") : saveDialog.open()
     }
     Action { id: saveAsAction; text: "Save &As..."; shortcut: "Ctrl+Shift+S"; onTriggered: saveDialog.open() }
+    Action {
+        id: undoAction
+        text: App.graph.undoText ? "&Undo " + App.graph.undoText : "&Undo"
+        shortcut: StandardKey.Undo
+        enabled: App.graph.canUndo
+        onTriggered: App.graph.undo()
+    }
+    Action {
+        id: redoAction
+        text: App.graph.redoText ? "&Redo " + App.graph.redoText : "&Redo"
+        shortcut: StandardKey.Redo
+        enabled: App.graph.canRedo
+        onTriggered: App.graph.redo()
+    }
     Action { id: renderAction; text: "&Render"; shortcut: "F5"; onTriggered: App.render.render() }
     Action {
         id: cancelAction
@@ -66,6 +80,11 @@ ApplicationWindow {
             MenuItem { action: saveAsAction }
             MenuSeparator {}
             MenuItem { text: "&Quit"; onTriggered: window.close() }
+        }
+        Menu {
+            title: "&Edit"
+            MenuItem { action: undoAction }
+            MenuItem { action: redoAction }
         }
         Menu {
             id: viewMenu
