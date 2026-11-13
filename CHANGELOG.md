@@ -9,16 +9,27 @@ Additionnaly we ask developers to track down modifications to their related PR/I
 
 ## [Unreleased]
 
-### Added
+## 0.0.2 - pre-release n.2 - November 2026
 
-- Python + QML scene editor (`ui/`) replacing the experimental PySide6 widgets UI:
-  node graph, node editor, scene graph, attribute viewer and render viewer with an
-  engine selector, in dockable panels that can float as separate windows
 - Headless render mode: `raito --scene <scene.xml> --output <image.ppm>`
 - `RtRenderResult::export_as_ppm` writes binary PPM images
-- Scene editor: undo / redo (`Ctrl+Z` / `Ctrl+Y`) of node graph and node editor changes
-- Scene editor: scenes are saved as `.rt` files
+- UI: Python + QML replacing `egui`:
+  - node graph
+  - node editor
+  - scene graph
+  - attribute viewer
+  - render viewer with an engine selector
+  - dockable panels that can float as separate windows
+  - Scene editor: undo / redo (`Ctrl+Z` / `Ctrl+Y`) of node graph and node editor changes
+  - Scene editor: scenes are saved as `.rt` files
 - Raito logo (wordmark with dark / light text, app icon) as SVG, PNG and ICO in
-  `docs/source/images/logo`, a Logo page in the docs and `scripts/export_logo.py`
-  to regenerate the PNG / ICO files
-- Scene editor: Raito window icon
+  `docs/source/images/logo`
+- Documentation updates
+
+## 0.0.1 - pre-release n.1 - September 2024
+
+First milestone:
+- Simple demo UI in `egui`
+- Working raytracing rendering with spheres geometry
+- Several shaders
+- XML scenes
