@@ -3,3 +3,23 @@
   /* --md-primary-fg-color--light: #ecb7b7; */
   /* --md-primary-fg-color--dark: #90030c; */
 }
+
+/* Logo page : show each wordmark on the background it is made for */
+.raito-logo-light,
+.raito-logo-dark {
+  padding: 2rem 1rem 1rem;
+  border-radius: 0.5rem;
+}
+.raito-logo-light {
+  background-color: #F4F6F8;
+  color: #4A5D6A;
+}
+.raito-logo-dark {
+  background-color: #0F1B24;
+  color: #9FB2BF;
+}
+.raito-icon-sizes {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}

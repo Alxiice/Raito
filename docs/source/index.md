@@ -1,5 +1,10 @@
 # Introduction
 
+<p align="center" markdown>
+  ![Raito](images/logo/raito-logo-light.svg#only-light){ width="360" }
+  ![Raito](images/logo/raito-logo-dark.svg#only-dark){ width="360" }
+</p>
+
 <figure markdown="span">
   ![Raito render](images/raito_render_0.png)
   <figcaption>A render done with Raito</figcaption>

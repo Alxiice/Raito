@@ -1,10 +1,17 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/source/images/logo/raito-logo-dark.svg">
+    <img alt="Raito" src="./docs/source/images/logo/raito-logo-light.svg" width="360">
+  </picture>
+</p>
+
 # Raito
 
 Raito Rendering engine
 
 <p align="center">
-  <img src="./docs/source/videos/pres-1.gif" /><br/>
-  <i>Raito RenderView UI with a sphere shaded with normals</i>
+  <img src="./docs/source/images/raito_ui.png" /><br/>
+  <i>Raito scene editor: scene graph, viewer, node graph and node editor</i>
 </p>
 
 ## Dependencies

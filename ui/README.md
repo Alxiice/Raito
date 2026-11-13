@@ -5,6 +5,8 @@ Node-based scene editor for the Raito render engine, written in Python with a
 each node adds locations to a scene graph, and the viewer renders the scene
 produced by the *viewed* node.
 
+![Raito scene editor](../docs/source/images/raito_ui.png)
+
 ## Features
 
 - **Node Graph**: create, connect and arrange nodes that build the scene

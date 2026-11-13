@@ -5,7 +5,7 @@ import os
 import sys
 
 from PySide6.QtCore import QUrl
-from PySide6.QtGui import QGuiApplication
+from PySide6.QtGui import QGuiApplication, QIcon
 from PySide6.QtQml import QQmlApplicationEngine, qmlRegisterSingletonInstance
 from PySide6.QtQuickControls2 import QQuickStyle
 
@@ -14,6 +14,7 @@ from .backend import AppController
 
 
 QML_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "qml")
+ICON_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "icons", "raito.ico")
 
 
 def main(argv=None) -> int:
@@ -28,6 +29,7 @@ def main(argv=None) -> int:
     app.setOrganizationName("Raito")
     app.setApplicationName("Raito")
     app.setApplicationVersion(__version__)
+    app.setWindowIcon(QIcon(ICON_PATH))
 
     controller = AppController()
     if args.scene:
