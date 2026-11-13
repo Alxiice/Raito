@@ -8,3 +8,6 @@ cargo doc --no-deps --release --manifest-path "$SCRIPT_DIR/../Cargo.toml" --targ
 
 # Build the doc
 python -m mkdocs build --config-file "$SCRIPT_DIR/mkdocs.yml" --site-dir "$SCRIPT_DIR/build/html"
+
+# Ship the rust doc inside the site so it gets deployed with it
+cp -r "$SCRIPT_DIR/build/rust/doc" "$SCRIPT_DIR/build/html/rust"
