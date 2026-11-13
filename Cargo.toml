@@ -5,6 +5,7 @@ edition = "2021"
 description = "Raito is a Rendering Engine written in Rust"
 authors = ["Alice Sonolet <alice.sonolet@gmail.com>"]
 repository = "https://github.com/Alxiice/Raito"
+license = "MIT OR Apache-2.0"
 publish = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
