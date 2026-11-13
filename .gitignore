@@ -22,3 +22,6 @@ docs/build
 __pycache__/**
 *.pyc
 venv
+
+# Archive for old / uncommited files
+.archive
